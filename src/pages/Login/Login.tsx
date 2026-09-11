@@ -1,170 +1,205 @@
 import { FormEvent, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import TextInput from "../../components/TextInput";
-import useEmail from "../../hooks/useEmail";
-import usePassword from "../../hooks/usePassword";
-import { validateLogin } from "../../utils/validators";
-import { useNavigate } from "react-router-dom";
-import { RequestStatus } from "../../types";
+import AuthLayout from "../../components/AuthLayout";
+import TextField from "../../components/TextField";
+import PasswordField from "../../components/PasswordField";
+import GradientButton from "../../components/GradientButton";
+import AlertBanner from "../../components/AlertBanner";
+import { useToast } from "../../components/Toast";
+import { useAuth } from "../../context/AuthContext";
+import { ApiError } from "../../api/client";
+import * as authApi from "../../api/auth";
+import {
+    FieldErrors,
+    LoginFormValues,
+    validateLoginForm,
+} from "../../utils/validators";
+import { colors } from "../../styles/tokens";
 
-const AuthPage = styled.div`
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2.5rem 1rem;
-    background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 50%, #ecfeff 100%);
+const Title = styled.h1`
+    margin: 0 0 8px;
+    font-size: 40px;
+    font-weight: 400;
+    line-height: 1.2;
+    color: ${colors.text};
 `;
 
-const AuthCard = styled.div`
-    width: 100%;
-    max-width: 28rem;
-    padding: 2rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 1.25rem;
-    background: rgba(255, 255, 255, 0.95);
-    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
-    backdrop-filter: blur(10px);
+const Subtitle = styled.p`
+    margin: 0;
+    font-size: 15px;
+    color: ${colors.textMuted};
 `;
 
-const PageTitle = styled.h1`
-    margin-bottom: 1.5rem;
-    text-align: center;
-    font-size: 1.875rem;
-    font-weight: 600;
-    color: #0f172a;
-`;
-
-const AuthForm = styled.form`
+const Form = styled.form`
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 20px;
+    margin-top: 40px;
 `;
 
-const SubmitButton = styled.button`
-    width: 100%;
-    border: none;
-    border-radius: 0.75rem;
-    padding: 0.75rem 1rem;
-    background: #0284c7;
-    color: #ffffff;
-    font-weight: 600;
+const BannerSlot = styled.div`
+    margin-top: 16px;
+`;
+
+const Row = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: -4px;
+`;
+
+const Remember = styled.label`
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: ${colors.text};
     cursor: pointer;
-    transition: background 0.2s ease;
-
-    &:hover {
-        background: #0369a1;
-    }
 `;
 
-const FeedbackText = styled.p<{ $status: RequestStatus }>`
-    font-size: 0.875rem;
-    color: ${({ $status }) => ($status === "error" ? "#ef4444" : "#16a34a")};
+const Checkbox = styled.input`
+    width: 18px;
+    height: 18px;
+    accent-color: #2f6bff;
+    cursor: pointer;
 `;
 
-const SwitchText = styled.p`
-    padding-top: 0.5rem;
+const Footer = styled.p`
+    margin: 0;
     text-align: center;
-    font-size: 0.875rem;
-    color: #475569;
+    font-size: 14px;
+    color: ${colors.textMuted};
 `;
 
-const SwitchLink = styled.span`
-    margin-left: 0.25rem;
-    font-weight: 600;
-    color: #0284c7;
-    cursor: pointer;
+const TextLink = styled(Link)`
+    color: ${colors.link};
+    text-decoration: none;
+    font-weight: 500;
 
     &:hover {
-        color: #0369a1;
+        text-decoration: underline;
     }
 `;
 
 const Login = () => {
-    const { email, emailError, emailChange } = useEmail();
-    const { password, passwordError, passwordChange } = usePassword();
+    const [values, setValues] = useState<LoginFormValues>({
+        email: "",
+        password: "",
+    });
+    const [errors, setErrors] = useState<FieldErrors<LoginFormValues>>({});
+    const [banner, setBanner] = useState<string | null>(null);
+    const [remember, setRemember] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    /** A rejected sign-in marks both fields without blaming either one. */
+    const [credentialsRejected, setCredentialsRejected] = useState(false);
 
-    const [status, setStatus] = useState<RequestStatus>("idle");
-    const [error, setError] = useState("");
-
+    const { signIn } = useAuth();
+    const showToast = useToast();
     const navigate = useNavigate();
 
-    function mockLogin(email: string, password: string): Promise<void> {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                if (email === "test@test.com" && password === "123456") {
-                    resolve();
-                } else {
-                    reject(new Error("Incorrect email or password"));
-                }
-            }, 1000);
-        });
-    }
+    const setValue = (key: keyof LoginFormValues, value: string) => {
+        setValues((prev) => ({ ...prev, [key]: value }));
+    };
 
     async function handleSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        setError("");
 
-        const errMsg = validateLogin(email, password);
+        const nextErrors = validateLoginForm(values);
+        setErrors(nextErrors);
 
-        if (errMsg) {
-            setStatus("error");
-            setError(errMsg);
+        const firstError = Object.values(nextErrors)[0];
+        if (firstError) {
+            setBanner(firstError);
             return;
         }
 
+        setBanner(null);
+        setCredentialsRejected(false);
+        setSubmitting(true);
+
         try {
-            setStatus("loading");
-            await mockLogin(email, password);
-            setStatus("success");
+            const session = await authApi.login({
+                email: values.email.trim(),
+                password: values.password,
+            });
+
+            showToast("Logged in successfully. Redirecting...");
+            signIn(session, remember);
+            window.setTimeout(() => navigate("/", { replace: true }), 900);
         } catch (err) {
-            setStatus("error");
-            setError(
-                err instanceof Error ? err.message : "Something went wrong"
-            );
+            if (err instanceof ApiError && err.isNetworkError) {
+                setBanner(`\u{1F50C} ${err.message}`);
+            } else if (err instanceof ApiError && err.status === 401) {
+                // Don't echo which half was wrong — the design shows one message.
+                setBanner("Invalid email or password. Please try again.");
+                setCredentialsRejected(true);
+            } else if (err instanceof ApiError) {
+                setBanner(err.message);
+            } else {
+                setBanner("Something went wrong. Please try again.");
+            }
+            setSubmitting(false);
         }
     }
 
     return (
-        <AuthPage>
-            <AuthCard>
-                <PageTitle>Login</PageTitle>
-                <AuthForm onSubmit={handleSubmit}>
-                    <TextInput
-                        label="Email"
-                        type="email"
-                        value={email}
-                        onChange={emailChange}
-                        error={emailError}
-                        autoFocus
-                    />
-                    <TextInput
-                        label="Password"
-                        type="password"
-                        value={password}
-                        onChange={passwordChange}
-                        error={passwordError}
-                    />
-                    <SubmitButton>
-                        {status === "loading" ? "Logging in..." : "Login"}
-                    </SubmitButton>
-                    {status === "error" && (
-                        <FeedbackText $status="error">{error}</FeedbackText>
-                    )}
-                    {status === "success" && (
-                        <FeedbackText $status="success">
-                            Login Success
-                        </FeedbackText>
-                    )}
-                    <SwitchText>
-                        Don't have an account?
-                        <SwitchLink onClick={() => navigate("/register")}>
-                            Register
-                        </SwitchLink>
-                    </SwitchText>
-                </AuthForm>
-            </AuthCard>
-        </AuthPage>
+        <AuthLayout>
+            <Title>Welcome Back</Title>
+            <Subtitle>Log in to continue your AI journey</Subtitle>
+
+            {banner && (
+                <BannerSlot>
+                    <AlertBanner>{banner}</AlertBanner>
+                </BannerSlot>
+            )}
+
+            <Form onSubmit={handleSubmit} noValidate>
+                <TextField
+                    id="email"
+                    name="email"
+                    type="email"
+                    label="Email"
+                    placeholder="Your email"
+                    autoComplete="email"
+                    value={values.email}
+                    invalid={Boolean(errors.email) || credentialsRejected}
+                    onChange={(e) => setValue("email", e.target.value)}
+                />
+                <PasswordField
+                    id="password"
+                    name="password"
+                    label="Password"
+                    placeholder="Your password"
+                    autoComplete="current-password"
+                    value={values.password}
+                    invalid={Boolean(errors.password) || credentialsRejected}
+                    onChange={(e) => setValue("password", e.target.value)}
+                />
+
+                <Row>
+                    <Remember>
+                        <Checkbox
+                            type="checkbox"
+                            checked={remember}
+                            onChange={(e) => setRemember(e.target.checked)}
+                        />
+                        Remember Me
+                    </Remember>
+                    <TextLink to="/forgot-password">Forgot Password?</TextLink>
+                </Row>
+
+                <GradientButton type="submit" disabled={submitting}>
+                    {submitting ? "Logging in..." : "Log In"}
+                </GradientButton>
+
+                <Footer>
+                    Don&apos;t have an account?{" "}
+                    <TextLink to="/register">Sign up</TextLink>
+                </Footer>
+            </Form>
+        </AuthLayout>
     );
 };
 
