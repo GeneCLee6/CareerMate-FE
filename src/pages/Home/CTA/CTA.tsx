@@ -1,3 +1,4 @@
+import { Link as RouterLink } from "react-router-dom";
 import styled from "styled-components";
 import { landingColors, landingGradients } from "../../../styles/tokens";
 
@@ -43,7 +44,7 @@ const Subtitle = styled.p`
     margin: 0;
 `;
 
-const Button = styled.a`
+const Button = styled(RouterLink)`
     display: inline-block;
     padding: 16px 36px;
     font-size: 16px;
@@ -75,7 +76,7 @@ const CTA = () => {
                         It’s free, smart, and made for you.
                     </Subtitle>
                 </Card>
-                <Button href="#start">Start Practingcing for Free</Button>
+                <Button to="/register">Start Practingcing for Free</Button>
             </CTAContainer>
         </Container>
     );

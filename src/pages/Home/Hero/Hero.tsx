@@ -1,4 +1,5 @@
-import styled from "styled-components";
+import { Link as RouterLink } from "react-router-dom";
+import styled, { css } from "styled-components";
 import ArrowIcon from "../../../components/ArrowIcon";
 import {
     landingColors,
@@ -60,7 +61,7 @@ const Buttons = styled.div`
     flex-wrap: wrap;
 `;
 
-const Button = styled.a`
+const buttonStyles = css`
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -74,7 +75,9 @@ const Button = styled.a`
     cursor: pointer;
 `;
 
-const PrimaryButton = styled(Button)`
+/** Routes into the app, so it is a router link rather than a hash anchor. */
+const PrimaryButton = styled(RouterLink)`
+    ${buttonStyles}
     background: ${landingGradients.primary};
     color: ${landingColors.onGradient};
     box-shadow: 0 4px 12px rgba(80, 79, 253, 0.3);
@@ -85,7 +88,8 @@ const PrimaryButton = styled(Button)`
     }
 `;
 
-const SecondaryButton = styled(Button)`
+const SecondaryButton = styled.a`
+    ${buttonStyles}
     background-color: ${landingColors.surface};
     color: ${landingColors.body};
     border: 2px solid ${landingColors.border};
@@ -121,7 +125,7 @@ const Hero = () => {
                         CareerMate AI coaches you step by step.
                     </Description>
                     <Buttons>
-                        <PrimaryButton href="#start">
+                        <PrimaryButton to="/register">
                             Start for Free
                             <ArrowIcon />
                         </PrimaryButton>
