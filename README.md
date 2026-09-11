@@ -34,10 +34,12 @@ The app runs at [http://localhost:3000](http://localhost:3000).
 
 ## Environment variables
 
-The contact form posts through EmailJS. Copy `.env.example` to `.env.local` and
-fill in your own credentials:
+`REACT_APP_API_BASE_URL` points at the CareerMate-BE API (note the `/v1`
+prefix). The contact form posts through EmailJS. Copy `.env.example` to
+`.env.local` and fill in your own credentials:
 
 ```
+REACT_APP_API_BASE_URL=http://localhost:3000/v1
 REACT_APP_EMAILJS_PUBLIC_KEY=
 REACT_APP_EMAILJS_SERVICE_ID=
 REACT_APP_EMAILJS_TEMPLATE_ID=
@@ -50,17 +52,21 @@ of sending an email, so the form stays usable in local development.
 
 ```
 src/
+├── api/                    Typed API client (auth, users, resumes, uploads)
 ├── assets/                 Images used across the site
 ├── components/             Shared, page-agnostic components
-│   ├── ArrowIcon/
-│   ├── BackToTop/
-│   └── TextInput/
-├── hooks/                  useEmail, usePassword
+│   ├── AppHeader/          Signed-in top bar
+│   ├── Avatar/
+│   ├── Section/            Shared landing section shell
+│   ├── UserMenu/           Account dropdown, logout modal + toast
+│   └── ...                 Form fields, buttons, modal, toast
+├── context/                AuthContext (session + token)
+├── styles/tokens.ts        Design tokens (Zeplin + landing palettes)
 ├── pages/
 │   ├── Home/               The landing page, one folder per section
 │   │   ├── Navbar/
 │   │   ├── Hero/
-│   │   ├── Features/
+│   │   ├── ProductPreview/
 │   │   ├── ProblemSolution/
 │   │   ├── FeaturesShowcase/
 │   │   ├── AIAction/
@@ -70,9 +76,12 @@ src/
 │   │   ├── CTA/
 │   │   └── Footer/
 │   ├── Login/
-│   └── Register/
-├── utils/                  Form validators
-└── types.ts                Shared types
+│   ├── Register/
+│   ├── ForgotPassword/
+│   ├── Onboarding/
+│   ├── Chat/               The signed-in assistant screen
+│   └── Settings/
+└── utils/                  Form validators
 ```
 
 Each section folder exports its component through an `index.ts` barrel, so
@@ -80,9 +89,15 @@ sections are imported as `import Hero from "./Hero"`.
 
 ## Routes
 
-| Path         | Page                    |
-| ------------ | ----------------------- |
-| `/`          | Landing page            |
-| `/login`     | Login                   |
-| `/register`  | Register                |
-| anything else | Redirects to `/`       |
+| Path               | Page                          | Auth     |
+| ------------------ | ----------------------------- | -------- |
+| `/`                | Landing page                  | public   |
+| `/login`           | Login                         | public   |
+| `/register`        | Register                      | public   |
+| `/forgot-password` | Reset password (3 steps)      | public   |
+| `/onboarding`      | First-run setup               | required |
+| `/app`             | Assistant (resume + chat)     | required |
+| `/settings`        | Personal settings             | required |
+| anything else      | Redirects to `/`              | —        |
+
+Protected routes redirect to `/login` and send the user back afterwards.

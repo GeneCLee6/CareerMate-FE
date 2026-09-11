@@ -1,0 +1,367 @@
+import { ChangeEvent, useRef } from "react";
+import styled from "styled-components";
+import Avatar from "../../components/Avatar";
+import { Resume } from "../../api/resumes";
+import { User } from "../../api/auth";
+import { colors } from "../../styles/tokens";
+import { FIELD_OPTIONS } from "../Onboarding/options";
+import logoIcon from "../../assets/logo-icon.png";
+import logoText from "../../assets/logo-text.png";
+
+const Aside = styled.aside`
+    display: flex;
+    flex-direction: column;
+    width: 268px;
+    flex-shrink: 0;
+    padding: 24px 20px;
+    background-color: #fff;
+    border-right: 1px solid #eef0f3;
+
+    @media (max-width: 860px) {
+        display: none;
+    }
+`;
+
+const Logo = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 36px;
+`;
+
+const LogoIcon = styled.img`
+    height: 22px;
+    width: auto;
+`;
+
+const LogoText = styled.img`
+    height: 17px;
+    width: auto;
+`;
+
+const SectionTitle = styled.h2`
+    margin: 0 0 14px;
+    font-size: 15px;
+    font-weight: 400;
+    color: ${colors.text};
+`;
+
+const UploadButton = styled.button`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    height: 44px;
+    font-family: inherit;
+    font-size: 14px;
+    color: ${colors.text};
+    background-color: #fff;
+    border: 1px solid ${colors.border};
+    border-radius: 22px;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+        background-color: #fafafa;
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+`;
+
+const EmptyHint = styled.p`
+    margin: 14px 0 0;
+    font-size: 12px;
+    color: ${colors.placeholder};
+    text-align: center;
+`;
+
+const ResumeList = styled.ul`
+    margin: 18px 0 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+`;
+
+/** The delete control only appears on hover, as annotated in the design. */
+const ResumeRow = styled.li`
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 6px;
+    border-radius: 8px;
+
+    &:hover {
+        background-color: #f6f7f9;
+    }
+
+    &:hover button,
+    & button:focus-visible {
+        opacity: 1;
+    }
+`;
+
+const FileName = styled.span`
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    color: ${colors.text};
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+`;
+
+const DeleteButton = styled.button`
+    display: flex;
+    padding: 4px;
+    color: ${colors.placeholder};
+    background: none;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+
+    &:hover {
+        color: ${colors.danger};
+    }
+`;
+
+const Spacer = styled.div`
+    flex: 1;
+`;
+
+const UserBlock = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+`;
+
+const UserName = styled.span`
+    font-size: 14px;
+    color: ${colors.text};
+`;
+
+const ProfileCard = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px 16px;
+    background-color: #f6f7f9;
+    border-radius: 12px;
+`;
+
+const ProfileRow = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+`;
+
+const ProfileLabel = styled.span`
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: ${colors.placeholder};
+`;
+
+const ProfileValue = styled.span`
+    font-size: 13px;
+    color: ${colors.text};
+`;
+
+const UploadIcon = () => (
+    <svg
+        width="17"
+        height="17"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <rect x="3" y="3" width="18" height="18" rx="3" />
+        <path d="M12 16V8m0 0-3 3m3-3 3 3" />
+    </svg>
+);
+
+const PdfIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="3" y="2" width="18" height="20" rx="3" fill="#e8effe" />
+        <path
+            d="M8 8h4a2 2 0 1 1 0 4H8V8Zm0 0v8"
+            stroke="#2f6bff"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+    </svg>
+);
+
+const TrashIcon = () => (
+    <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0 1 13h8l1-13" />
+    </svg>
+);
+
+const BriefcaseIcon = () => (
+    <svg
+        width="13"
+        height="13"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <rect x="3" y="7" width="18" height="13" rx="2" />
+        <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+    </svg>
+);
+
+const TargetIcon = () => (
+    <svg
+        width="13"
+        height="13"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <circle cx="12" cy="12" r="9" />
+        <circle cx="12" cy="12" r="4" />
+    </svg>
+);
+
+export interface ResumeSidebarProps {
+    user: User;
+    resumes: Resume[];
+    uploading: boolean;
+    onUpload: (file: File) => void;
+    onDelete: (resume: Resume) => void;
+}
+
+const ResumeSidebar = ({
+    user,
+    resumes,
+    uploading,
+    onUpload,
+    onDelete,
+}: ResumeSidebarProps) => {
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        e.target.value = "";
+        if (file) onUpload(file);
+    };
+
+    const fieldLabel =
+        FIELD_OPTIONS.find((option) => option.value === user.field)?.label ?? "";
+
+    return (
+        <Aside>
+            <Logo>
+                <LogoIcon src={logoIcon} alt="" />
+                <LogoText src={logoText} alt="CareerMate AI" />
+            </Logo>
+
+            <SectionTitle>My Resume</SectionTitle>
+            <UploadButton
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+            >
+                <UploadIcon />
+                {uploading
+                    ? "Uploading..."
+                    : resumes.length
+                      ? "Upload other resume"
+                      : "Upload resume"}
+            </UploadButton>
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/pdf"
+                hidden
+                onChange={handleChange}
+            />
+
+            {resumes.length === 0 ? (
+                <EmptyHint>You haven&apos;t uploaded a resume</EmptyHint>
+            ) : (
+                <ResumeList>
+                    {resumes.map((resume) => (
+                        <ResumeRow key={resume.id}>
+                            <PdfIcon />
+                            <FileName title={resume.fileName}>
+                                {resume.fileName}
+                            </FileName>
+                            <DeleteButton
+                                type="button"
+                                onClick={() => onDelete(resume)}
+                                aria-label={`Delete ${resume.fileName}`}
+                            >
+                                <TrashIcon />
+                            </DeleteButton>
+                        </ResumeRow>
+                    ))}
+                </ResumeList>
+            )}
+
+            <Spacer />
+
+            <UserBlock>
+                <Avatar name={user.fullName} src={user.avatarUrl} size={30} />
+                <UserName>{user.displayName || user.fullName}</UserName>
+            </UserBlock>
+
+            {(fieldLabel || user.goal) && (
+                <ProfileCard>
+                    {fieldLabel && (
+                        <ProfileRow>
+                            <ProfileLabel>
+                                <BriefcaseIcon />
+                                Your field:
+                            </ProfileLabel>
+                            <ProfileValue>{fieldLabel}</ProfileValue>
+                        </ProfileRow>
+                    )}
+                    {user.goal && (
+                        <ProfileRow>
+                            <ProfileLabel>
+                                <TargetIcon />
+                                Goal:
+                            </ProfileLabel>
+                            <ProfileValue>{user.goal}</ProfileValue>
+                        </ProfileRow>
+                    )}
+                </ProfileCard>
+            )}
+        </Aside>
+    );
+};
+
+export default ResumeSidebar;

@@ -7,6 +7,7 @@ import {
     useState,
 } from "react";
 import { AuthSession, User } from "../api/auth";
+import { setAuthToken } from "../api/client";
 
 const STORAGE_KEY = "careermate.session";
 
@@ -17,6 +18,8 @@ interface AuthContextValue {
     /** `remember` decides whether the session survives closing the tab. */
     signIn: (session: AuthSession, remember?: boolean) => void;
     signOut: () => void;
+    /** Replaces the stored user after a profile update. */
+    updateUser: (user: User) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -40,6 +43,7 @@ function readStoredSession(): AuthSession | null {
     return null;
 }
 
+/** Writes to whichever store already holds the session, defaulting to `remember`. */
 function writeStoredSession(session: AuthSession, remember: boolean) {
     const store = remember ? localStorage : sessionStorage;
     try {
@@ -59,20 +63,52 @@ function clearStoredSession() {
     }
 }
 
+function persistedIn(): Storage | null {
+    for (const store of [localStorage, sessionStorage]) {
+        try {
+            if (store.getItem(STORAGE_KEY)) return store;
+        } catch {
+            // Ignore and try the next one.
+        }
+    }
+    return null;
+}
+
+const initialSession = readStoredSession();
+// Make the restored token available to the API client before the first render.
+setAuthToken(initialSession?.accessToken ?? null);
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const [session, setSession] = useState<AuthSession | null>(
-        readStoredSession
-    );
+    const [session, setSession] = useState<AuthSession | null>(initialSession);
 
     const signIn = useCallback((next: AuthSession, remember = false) => {
         clearStoredSession();
         writeStoredSession(next, remember);
+        setAuthToken(next.accessToken);
         setSession(next);
     }, []);
 
     const signOut = useCallback(() => {
         clearStoredSession();
+        setAuthToken(null);
         setSession(null);
+    }, []);
+
+    const updateUser = useCallback((user: User) => {
+        setSession((prev) => {
+            if (!prev) return prev;
+            const next = { ...prev, user };
+            // Keep it in whichever store the session already lives in.
+            const store = persistedIn();
+            if (store) {
+                try {
+                    store.setItem(STORAGE_KEY, JSON.stringify(next));
+                } catch {
+                    // Non-fatal; the in-memory session is still correct.
+                }
+            }
+            return next;
+        });
     }, []);
 
     const value = useMemo<AuthContextValue>(
@@ -82,8 +118,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             isAuthenticated: session !== null,
             signIn,
             signOut,
+            updateUser,
         }),
-        [session, signIn, signOut]
+        [session, signIn, signOut, updateUser]
     );
 
     return (

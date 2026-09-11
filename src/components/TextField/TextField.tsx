@@ -23,7 +23,7 @@ const InputShell = styled.div`
  * The invalid styling hangs off `aria-invalid` rather than a styled prop so the
  * visual state and the state screen readers announce can never drift apart.
  */
-const Input = styled.input<{ $hasAdornment: boolean }>`
+const Input = styled.input<{ $hasAdornment: boolean; $radius: string }>`
     width: 100%;
     height: ${control.height};
     padding: 0 ${({ $hasAdornment }) => ($hasAdornment ? "48px" : "20px")} 0 20px;
@@ -32,7 +32,7 @@ const Input = styled.input<{ $hasAdornment: boolean }>`
     color: ${colors.text};
     background-color: ${colors.surface};
     border: 1px solid ${colors.border};
-    border-radius: ${control.radius};
+    border-radius: ${({ $radius }) => $radius};
     outline: none;
     transition:
         border-color 0.2s ease,
@@ -76,10 +76,15 @@ export interface TextFieldProps
     invalid?: boolean;
     /** Rendered inside the field, e.g. the password visibility toggle. */
     adornment?: ReactNode;
+    /** Pill by default; settings uses softer corners. */
+    radius?: string;
 }
 
 const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
-    ({ id, label, invalid, adornment, ...inputProps }, ref) => (
+    (
+        { id, label, invalid, adornment, radius = control.radius, ...inputProps },
+        ref
+    ) => (
         <Field>
             <Label htmlFor={id}>{label}</Label>
             <InputShell>
@@ -88,6 +93,7 @@ const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
                     id={id}
                     ref={ref}
                     $hasAdornment={Boolean(adornment)}
+                    $radius={radius}
                     aria-invalid={invalid ? "true" : undefined}
                 />
                 {adornment && <Adornment>{adornment}</Adornment>}
