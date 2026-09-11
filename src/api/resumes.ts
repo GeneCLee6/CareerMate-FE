@@ -9,6 +9,18 @@ export interface Resume {
     updatedAt: string;
 }
 
+/**
+ * As the API sends it. The Resume model has no `id` virtual — unlike User,
+ * which sets toJSON:{virtuals:true} — so documents arrive with `_id` only.
+ */
+type RawResume = Omit<Resume, "id"> & { _id?: string; id?: string };
+
+/** Gives every resume a usable `id` whichever field the API populated. */
+function normaliseResume(raw: RawResume): Resume {
+    const { _id, id, ...rest } = raw;
+    return { ...rest, id: id ?? _id ?? "" };
+}
+
 interface PresignedUpload {
     uploadUrl: string;
     fileKey: string;
@@ -50,7 +62,20 @@ export async function uploadFile(
             body: file,
         });
     } catch {
-        throw new ApiError("Network error, please try again later.", 0, true);
+        // The browser reports a blocked cross-origin request and a genuinely
+        // unreachable host identically, as an opaque TypeError. Reaching here
+        // after the API happily issued the URL nearly always means the storage
+        // bucket has no CORS rule for this origin, so say where to look.
+        console.error(
+            "Upload to storage failed before it got a response. The API issued " +
+                "the upload URL, so the bucket most likely has no CORS rule " +
+                `allowing PUT from ${window.location.origin}.`
+        );
+        throw new ApiError(
+            "Could not reach file storage. Please try again.",
+            0,
+            true
+        );
     }
 
     if (!response.ok) {
@@ -60,16 +85,19 @@ export async function uploadFile(
     return fileKey;
 }
 
-export function createResume(fileKey: string, fileName: string): Promise<Resume> {
+export function createResume(
+    fileKey: string,
+    fileName: string
+): Promise<Resume> {
     return apiClient
-        .post<SuccessData<Resume>>("/resumes", { fileKey, fileName })
-        .then((res) => res.data);
+        .post<SuccessData<RawResume>>("/resumes", { fileKey, fileName })
+        .then((res) => normaliseResume(res.data));
 }
 
 export function getResumes(): Promise<Resume[]> {
     return apiClient
-        .get<SuccessData<Resume[]>>("/resumes")
-        .then((res) => res.data);
+        .get<SuccessData<RawResume[]>>("/resumes")
+        .then((res) => res.data.map(normaliseResume));
 }
 
 export function deleteResume(id: string): Promise<void> {
