@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import AuthLayout from "../../components/AuthLayout";
 import TextField from "../../components/TextField";
@@ -98,6 +98,12 @@ const Login = () => {
     const { signIn } = useAuth();
     const showToast = useToast();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // Set by ProtectedRoute when it bounced the user here.
+    const redirectTo =
+        (location.state as { from?: { pathname?: string } } | null)?.from
+            ?.pathname ?? "/app";
 
     const setValue = (key: keyof LoginFormValues, value: string) => {
         setValues((prev) => ({ ...prev, [key]: value }));
@@ -127,7 +133,10 @@ const Login = () => {
 
             showToast("Logged in successfully. Redirecting...");
             signIn(session, remember);
-            window.setTimeout(() => navigate("/", { replace: true }), 900);
+            window.setTimeout(
+                () => navigate(redirectTo, { replace: true }),
+                900
+            );
         } catch (err) {
             if (err instanceof ApiError && err.isNetworkError) {
                 setBanner(`\u{1F50C} ${err.message}`);

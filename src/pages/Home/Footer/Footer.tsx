@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { landingColors, landingLayout } from "../../../styles/tokens";
 import logoIcon from "../../../assets/logo-icon.png";
 import logoText from "../../../assets/logo-text.png";
 
@@ -21,20 +22,20 @@ const FOOTER_LINKS: FooterLinkItem[] = [
 
 const Container = styled.footer`
     width: 100%;
-    background-color: #fafafa;
+    background-color: ${landingColors.surfaceFooter};
     padding: 120px 40px 40px;
     position: relative;
     z-index: 1;
 `;
 
 const FooterContainer = styled.div`
-    max-width: 1400px;
+    max-width: ${landingLayout.contentMaxWidth};
     margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
 
-    @media (max-width: 768px) {
+    @media (max-width: ${landingLayout.mobile}) {
         flex-direction: column;
         gap: 24px;
     }
@@ -65,7 +66,7 @@ const LogoText = styled.img`
 const Copyright = styled.p`
     font-size: 14px;
     font-weight: 400;
-    color: #666;
+    color: ${landingColors.muted};
     margin: 0;
 `;
 
@@ -78,12 +79,12 @@ const Links = styled.div`
 const Link = styled.a`
     font-size: 15px;
     font-weight: 400;
-    color: #333;
+    color: ${landingColors.body};
     text-decoration: none;
     transition: color 0.3s ease;
 
     &:hover {
-        color: #000;
+        color: ${landingColors.heading};
     }
 `;
 

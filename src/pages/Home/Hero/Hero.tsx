@@ -1,17 +1,22 @@
 import styled from "styled-components";
 import ArrowIcon from "../../../components/ArrowIcon";
+import {
+    landingColors,
+    landingGradients,
+    landingLayout,
+} from "../../../styles/tokens";
 import heroDecorationImg from "../../../assets/arrow-decoration.png";
 
 const Container = styled.section`
     width: 100%;
-    background: linear-gradient(180deg, #fafafa 0%, #ffffff 100%);
+    background: ${landingGradients.hero};
     padding: 120px 40px 100px;
     position: relative;
     overflow: hidden;
 `;
 
 const HeroContainer = styled.div`
-    max-width: 1400px;
+    max-width: ${landingLayout.contentMaxWidth};
     margin: 0 auto;
     position: relative;
 `;
@@ -28,10 +33,10 @@ const Title = styled.h1`
     font-size: 48px;
     font-weight: 700;
     line-height: 1.2;
-    color: #000;
+    color: ${landingColors.heading};
     margin: 0 0 24px 0;
     letter-spacing: -0.02em;
-    border: 2px dashed #e0e0e0;
+    border: 2px dashed ${landingColors.borderDashed};
     padding: 40px 60px;
     border-radius: 16px;
     position: relative;
@@ -43,7 +48,7 @@ const Description = styled.p`
     font-size: 18px;
     font-weight: 400;
     line-height: 1.6;
-    color: #666;
+    color: ${landingColors.muted};
     margin: 0 0 48px 0;
 `;
 
@@ -70,8 +75,8 @@ const Button = styled.a`
 `;
 
 const PrimaryButton = styled(Button)`
-    background: linear-gradient(110deg, #504ffd 11%, #40c3fb 92%);
-    color: #fff;
+    background: ${landingGradients.primary};
+    color: ${landingColors.onGradient};
     box-shadow: 0 4px 12px rgba(80, 79, 253, 0.3);
 
     &:hover {
@@ -81,12 +86,12 @@ const PrimaryButton = styled(Button)`
 `;
 
 const SecondaryButton = styled(Button)`
-    background-color: #fff;
-    color: #333;
-    border: 2px solid #e5e5e5;
+    background-color: ${landingColors.surface};
+    color: ${landingColors.body};
+    border: 2px solid ${landingColors.border};
 
     &:hover {
-        color: #333;
+        color: ${landingColors.body};
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }

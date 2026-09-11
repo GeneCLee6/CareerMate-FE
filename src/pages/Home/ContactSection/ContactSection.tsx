@@ -1,6 +1,7 @@
 import { FormEvent, useCallback, useState } from "react";
 import styled from "styled-components";
 import ArrowIcon from "../../../components/ArrowIcon";
+import { landingColors, landingLayout } from "../../../styles/tokens";
 import {
     ContactFormValues,
     ContactFormErrors,
@@ -9,24 +10,24 @@ import {
     validateContactField,
     validateContactForm,
 } from "./validation";
+import { RequestStatus } from "./types";
 import { sendContactMessage } from "./sendContactMessage";
-import { RequestStatus } from "../../../types";
 
 const Container = styled.section`
-    background-color: #f9fafc;
+    background-color: ${landingColors.surfaceContact};
     padding: 40px;
     width: 100%;
 `;
 
 const ContactContainer = styled.div`
-    max-width: 1200px;
+    max-width: ${landingLayout.contentMaxWidthNarrow};
     margin: 0 auto;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 80px;
     align-items: start;
 
-    @media (max-width: 768px) {
+    @media (max-width: ${landingLayout.mobile}) {
         grid-template-columns: 1fr;
         gap: 40px;
     }
@@ -42,7 +43,7 @@ const Title = styled.h2`
     font-size: 48px;
     font-weight: 700;
     line-height: 1.3;
-    color: #000;
+    color: ${landingColors.heading};
     margin: 0;
 `;
 
@@ -72,7 +73,7 @@ const AvailableTime = styled.p`
 `;
 
 const FormWrapper = styled.div`
-    background-color: #fff;
+    background-color: ${landingColors.surface};
     padding: 40px;
     border-radius: 16px;
 `;
@@ -90,7 +91,7 @@ const FormGroup = styled.div`
 `;
 
 const Label = styled.label`
-    color: #000;
+    color: ${landingColors.heading};
 `;
 
 const fieldStyles = `
@@ -98,9 +99,9 @@ const fieldStyles = `
     padding: 14px 16px;
     font-size: 15px;
     font-family: inherit;
-    color: #000;
-    background-color: #fff;
-    border: 1px solid #e5e5e5;
+    color: ${landingColors.heading};
+    background-color: ${landingColors.surface};
+    border: 1px solid ${landingColors.border};
     border-radius: 8px;
     outline: none;
 `;
@@ -109,7 +110,7 @@ const Input = styled.input`
     ${fieldStyles}
 
     &::placeholder {
-        color: #ccc;
+        color: ${landingColors.placeholder};
     }
 `;
 
@@ -128,12 +129,12 @@ const Textarea = styled.textarea`
     min-height: 120px;
 
     &::placeholder {
-        color: #ccc;
+        color: ${landingColors.placeholder};
     }
 `;
 
 const ErrorMessage = styled.div`
-    color: #ff0000;
+    color: ${landingColors.danger};
     font-size: 14px;
     font-weight: 400;
     margin-top: 4px;
@@ -142,7 +143,7 @@ const ErrorMessage = styled.div`
 const StatusMessage = styled.p<{ $status: RequestStatus }>`
     margin: 0;
     font-size: 14px;
-    color: ${({ $status }) => ($status === "error" ? "#ff0000" : "#16a34a")};
+    color: ${({ $status }) => ($status === "error" ? landingColors.danger : landingColors.success)};
 `;
 
 const SubmitButton = styled.button`
@@ -153,8 +154,8 @@ const SubmitButton = styled.button`
     padding: 14px 32px;
     font-size: 16px;
     font-weight: 500;
-    color: #fff;
-    background-color: #000;
+    color: ${landingColors.surface};
+    background-color: ${landingColors.heading};
     border: none;
     border-radius: 28px;
     cursor: pointer;

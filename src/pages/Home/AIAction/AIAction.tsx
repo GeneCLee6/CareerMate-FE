@@ -1,22 +1,16 @@
 import styled from "styled-components";
+import { Section, SectionContainer } from "../../../components/Section";
+import { landingLayout } from "../../../styles/tokens";
 import actionLeftBgImg from "../../../assets/action-left-bg.png";
 import chatInterfaceImg from "../../../assets/action-chat-interface.png";
 
-const Container = styled.section`
-    width: 100%;
-    background-color: #fff;
-    padding: 100px 40px;
-`;
-
-const ActionContainer = styled.div`
-    max-width: 1400px;
-    margin: 0 auto;
+const ActionContainer = styled(SectionContainer)`
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 80px;
     align-items: center;
 
-    @media (max-width: 768px) {
+    @media (max-width: ${landingLayout.mobile}) {
         grid-template-columns: 1fr;
         gap: 40px;
     }
@@ -62,7 +56,7 @@ const ChatInterfaceImage = styled.img`
 
 const AIAction = () => {
     return (
-        <Container id="demo">
+        <Section id="demo">
             <ActionContainer>
                 <Left>
                     <Title>See CareerMate AI in Action</Title>
@@ -80,7 +74,7 @@ const AIAction = () => {
                     />
                 </Right>
             </ActionContainer>
-        </Container>
+        </Section>
     );
 };
 

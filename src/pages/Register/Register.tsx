@@ -140,7 +140,7 @@ const Register = () => {
             // The design logs the new account straight in after a short beat.
             window.setTimeout(() => {
                 signIn(session, true);
-                navigate("/", { replace: true });
+                navigate("/onboarding", { replace: true });
             }, 1200);
         } catch (err) {
             if (err instanceof ApiError && err.status === 409) {

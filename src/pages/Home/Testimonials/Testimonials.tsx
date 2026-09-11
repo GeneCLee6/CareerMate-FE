@@ -1,4 +1,6 @@
 import styled from "styled-components";
+import { Section, SectionContainer } from "../../../components/Section";
+import { landingColors, landingLayout } from "../../../styles/tokens";
 import emilyImg from "../../../assets/testimonial-emily.png";
 import jasonImg from "../../../assets/testimonial-jason.png";
 
@@ -24,22 +26,13 @@ const TESTIMONIALS: TestimonialItem[] = [
     },
 ];
 
-const Container = styled.section`
-    width: 100%;
-    background-color: #fff;
-    padding: 100px 40px;
-`;
-
-const TestimonialsContainer = styled.div`
-    max-width: 1400px;
-    margin: 0 auto;
-`;
+const TestimonialsContainer = styled(SectionContainer)``;
 
 const Title = styled.h2`
     font-size: 48px;
     font-weight: 700;
     line-height: 1.3;
-    color: #000;
+    color: ${landingColors.heading};
     text-align: center;
     margin: 0 0 60px 0;
 `;
@@ -49,14 +42,14 @@ const Grid = styled.div`
     grid-template-columns: repeat(2, 1fr);
     gap: 40px;
 
-    @media (max-width: 768px) {
+    @media (max-width: ${landingLayout.mobile}) {
         grid-template-columns: 1fr;
     }
 `;
 
 const Card = styled.div`
-    background-color: #fff;
-    border: 1px solid #e5e5e5;
+    background-color: ${landingColors.surface};
+    border: 1px solid ${landingColors.border};
     border-radius: 20px;
     padding: 0;
     display: flex;
@@ -81,7 +74,7 @@ const Quote = styled.p`
     font-size: 18px;
     font-weight: 500;
     line-height: 1.6;
-    color: #000;
+    color: ${landingColors.heading};
     margin: 0 0 30px 0;
 `;
 
@@ -93,20 +86,20 @@ const Author = styled.div`
 const AuthorName = styled.p`
     font-size: 16px;
     font-weight: 700;
-    color: #000;
+    color: ${landingColors.heading};
     margin: 0;
 `;
 
 const AuthorRole = styled.p`
     font-size: 14px;
     font-weight: 400;
-    color: #666;
+    color: ${landingColors.muted};
     margin: 0;
 `;
 
 const Testimonials = () => {
     return (
-        <Container>
+        <Section>
             <TestimonialsContainer>
                 <Title>Trusted by Students Worldwide</Title>
                 <Grid>
@@ -127,7 +120,7 @@ const Testimonials = () => {
                     ))}
                 </Grid>
             </TestimonialsContainer>
-        </Container>
+        </Section>
     );
 };
 

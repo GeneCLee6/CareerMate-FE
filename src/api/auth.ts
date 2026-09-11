@@ -1,4 +1,4 @@
-import { apiClient } from "./client";
+import { apiClient, SuccessData, SuccessMessage } from "./client";
 
 /** Mirrors the fields the backend's user model exposes through toJSON. */
 export interface User {
@@ -13,16 +13,6 @@ export interface User {
     avatarUrl?: string | null;
     createdAt: string;
     updatedAt: string;
-}
-
-interface SuccessData<T> {
-    success: true;
-    data: T;
-}
-
-interface SuccessMessage {
-    success: true;
-    message: string;
 }
 
 export interface AuthSession {
