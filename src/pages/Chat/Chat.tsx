@@ -13,6 +13,7 @@ import {
 } from "../../api/resumes";
 import ResumeSidebar from "./ResumeSidebar";
 import { colors, fontFamily } from "../../styles/tokens";
+import { validateResumeFile } from "../../utils/fileValidation";
 import logoIcon from "../../assets/logo-icon.png";
 
 const Page = styled.div`
@@ -291,6 +292,8 @@ const Chat = () => {
 
     const [resumes, setResumes] = useState<Resume[]>([]);
     const [uploading, setUploading] = useState(false);
+    const [uploadingName, setUploadingName] = useState<string | null>(null);
+    const [uploadError, setUploadError] = useState<string | null>(null);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [draft, setDraft] = useState("");
@@ -319,19 +322,31 @@ const Chat = () => {
 
     const handleUpload = useCallback(
         async (file: File) => {
+            // Reject what the server would reject, before spending the upload.
+            const problem = validateResumeFile(file);
+            if (problem) {
+                setUploadError(problem);
+                return;
+            }
+
+            setUploadError(null);
+            setUploadingName(file.name);
             setUploading(true);
             try {
                 const resume = await uploadResume(file);
                 setResumes((prev) => [resume, ...prev]);
                 showToast("Resume uploaded");
             } catch (err) {
-                showToast(
+                const message =
                     err instanceof ApiError
                         ? err.message
-                        : "Upload failed. Please try again."
-                );
+                        : "Upload failed. Please try again.";
+                // The toast times out; the sidebar keeps the reason visible.
+                setUploadError(message);
+                showToast(message, 5000);
             } finally {
                 setUploading(false);
+                setUploadingName(null);
             }
         },
         [showToast]
@@ -387,6 +402,8 @@ const Chat = () => {
                 onDelete={handleDelete}
                 open={drawerOpen}
                 onClose={() => setDrawerOpen(false)}
+                uploadingName={uploadingName}
+                uploadError={uploadError}
             />
 
             <Main>
