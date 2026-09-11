@@ -1,4 +1,10 @@
 import styled from "styled-components";
+import { Section, SectionContainer } from "../../../components/Section";
+import {
+    landingColors,
+    landingGradients,
+    landingLayout,
+} from "../../../styles/tokens";
 import rocketIconImg from "../../../assets/rocket-icon.png";
 
 const PROBLEMS: string[] = [
@@ -7,21 +13,14 @@ const PROBLEMS: string[] = [
     "You’re unsure how to plan your career.",
 ];
 
-const Container = styled.section`
-    width: 100%;
-    background-color: #fff;
-    padding: 100px 40px;
-`;
-
-const ProblemSolutionContainer = styled.div`
-    max-width: 1200px;
-    margin: 0 auto;
+const ProblemSolutionContainer = styled(SectionContainer)`
+    max-width: ${landingLayout.contentMaxWidthNarrow};
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 80px;
     align-items: center;
 
-    @media (max-width: 768px) {
+    @media (max-width: ${landingLayout.mobile}) {
         grid-template-columns: 1fr;
         gap: 40px;
     }
@@ -31,7 +30,7 @@ const Title = styled.h2`
     font-size: 36px;
     font-weight: 700;
     line-height: 1.3;
-    color: #000;
+    color: ${landingColors.heading};
     text-align: center;
     margin: 0 0 48px 0;
 `;
@@ -55,7 +54,7 @@ const ProblemItem = styled.li`
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background-color: #f5f5f5;
+    background-color: ${landingColors.surfaceSubtle};
     padding: 24px 28px;
     border-radius: 12px;
     transition: all 0.3s ease;
@@ -68,7 +67,7 @@ const ProblemText = styled.p`
 const ProblemIcon = styled.div`
     width: 40px;
     height: 40px;
-    background-color: #000;
+    background-color: ${landingColors.heading};
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -84,7 +83,7 @@ const SolutionSide = styled.div`
 `;
 
 const SolutionCard = styled.div`
-    background: linear-gradient(137deg, #504ffd 6%, #40c3fb 96%);
+    background: ${landingGradients.card};
     border-radius: 24px;
     padding: 60px 50px;
     position: relative;
@@ -104,7 +103,7 @@ const SolutionText = styled.h3`
     font-size: 36px;
     font-weight: 700;
     line-height: 1.3;
-    color: #ffffff;
+    color: ${landingColors.onGradient};
     margin: 0;
 `;
 
@@ -121,7 +120,7 @@ const RocketIcon = styled.img`
 
 const ProblemSolution = () => {
     return (
-        <Container>
+        <Section>
             <Title>Still Struggling with Job Applications?</Title>
             <ProblemSolutionContainer>
                 <ProblemSide>
@@ -164,7 +163,7 @@ const ProblemSolution = () => {
                     </SolutionCard>
                 </SolutionSide>
             </ProblemSolutionContainer>
-        </Container>
+        </Section>
     );
 };
 

@@ -1,7 +1,7 @@
 import styled from "styled-components";
 import Navbar from "./Navbar";
 import Hero from "./Hero";
-import Features from "./Features";
+import ProductPreview from "./ProductPreview";
 import ProblemSolution from "./ProblemSolution";
 import FeaturesShowcase from "./FeaturesShowcase";
 import AIAction from "./AIAction";
@@ -23,7 +23,7 @@ const Home = () => {
             <Navbar />
             <MainContent>
                 <Hero />
-                <Features />
+                <ProductPreview />
                 <ProblemSolution />
                 <FeaturesShowcase />
                 <AIAction />

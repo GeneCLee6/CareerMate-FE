@@ -1,8 +1,9 @@
 import styled from "styled-components";
+import { landingColors, landingGradients } from "../../../styles/tokens";
 
 const Container = styled.section`
     width: 100%;
-    background-color: #fff;
+    background-color: ${landingColors.surface};
     padding: 100px 40px 0;
     margin-bottom: -80px;
     position: relative;
@@ -10,7 +11,7 @@ const Container = styled.section`
 `;
 
 const CTAContainer = styled.div`
-    background: linear-gradient(110deg, #504ffd 11%, #40c3fb 92%);
+    background: ${landingGradients.primary};
     border-radius: 32px;
     padding: 80px 60px;
     text-align: center;
@@ -30,7 +31,7 @@ const Title = styled.h2`
     font-size: 48px;
     font-weight: 700;
     line-height: 1.3;
-    color: #fff;
+    color: ${landingColors.onGradient};
     margin: 0;
 `;
 
@@ -38,7 +39,7 @@ const Subtitle = styled.p`
     font-size: 18px;
     font-weight: 400;
     line-height: 1.4;
-    color: #cedaff;
+    color: ${landingColors.onGradientMuted};
     margin: 0;
 `;
 
@@ -47,8 +48,8 @@ const Button = styled.a`
     padding: 16px 36px;
     font-size: 16px;
     font-weight: 500;
-    color: #fff;
-    background-color: #000;
+    color: ${landingColors.onGradient};
+    background-color: ${landingColors.heading};
     border: none;
     border-radius: 28px;
     text-decoration: none;
@@ -57,7 +58,7 @@ const Button = styled.a`
     margin-top: 72px;
 
     &:hover {
-        background-color: #333;
+        background-color: ${landingColors.headingHover};
         transform: translateY(-2px);
     }
 `;

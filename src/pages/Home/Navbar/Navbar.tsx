@@ -1,11 +1,12 @@
 import styled from "styled-components";
+import { landingColors, landingLayout } from "../../../styles/tokens";
 import logoIcon from "../../../assets/logo-icon.png";
 import logoText from "../../../assets/logo-text.png";
 
 const Container = styled.nav`
     width: 100%;
-    background-color: #ffffff;
-    border-bottom: 1px solid #e5e5e5;
+    background-color: ${landingColors.surface};
+    border-bottom: 1px solid ${landingColors.border};
     position: fixed;
     top: 0;
     left: 0;
@@ -19,9 +20,9 @@ const NavContainer = styled.div`
     justify-content: space-between;
     padding: 16px 24px;
     margin: 0 auto;
-    max-width: 1400px;
+    max-width: ${landingLayout.contentMaxWidth};
 
-    @media (max-width: 768px) {
+    @media (max-width: ${landingLayout.mobile}) {
         padding: 16px 20px;
     }
 `;
@@ -46,23 +47,23 @@ const Links = styled.div`
     left: 50%;
     transform: translateX(-50%);
 
-    @media (max-width: 768px) {
+    @media (max-width: ${landingLayout.mobile}) {
         gap: 20px;
     }
 `;
 
 const Link = styled.a`
     text-decoration: none;
-    color: #333;
+    color: ${landingColors.body};
     font-size: 15px;
     transition: color 0.3s ease;
     white-space: nowrap;
 
     &:hover {
-        color: #000;
+        color: ${landingColors.heading};
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: ${landingLayout.mobile}) {
         font-size: 14px;
     }
 `;
@@ -80,8 +81,8 @@ const SignInButton = styled(Link)`
 
 const StartButton = styled.a`
     text-decoration: none;
-    background-color: #000;
-    color: #fff;
+    background-color: ${landingColors.heading};
+    color: ${landingColors.surface};
     font-size: 15px;
     font-weight: 500;
     padding: 10px 24px;
@@ -93,7 +94,7 @@ const StartButton = styled.a`
     display: inline-block;
 
     &:hover {
-        background-color: #333;
+        background-color: ${landingColors.headingHover};
         transform: translateY(-1px);
     }
 `;

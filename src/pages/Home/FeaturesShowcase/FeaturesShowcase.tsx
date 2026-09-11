@@ -1,4 +1,6 @@
 import styled from "styled-components";
+import { Section, SectionContainer } from "../../../components/Section";
+import { landingColors, landingLayout } from "../../../styles/tokens";
 import mockInterviewImg from "../../../assets/card-mock-interview.png";
 import resumeAnalyzerImg from "../../../assets/card-resume-analyzer.png";
 import careerCoachImg from "../../../assets/card-career-coach.png";
@@ -35,21 +37,14 @@ const FEATURE_CARDS: FeatureCardItem[] = [
     },
 ];
 
-const Container = styled.section`
-    width: 100%;
-    background-color: #fff;
-    padding: 100px 40px;
-`;
-
-const ShowcaseContainer = styled.div`
-    max-width: 1200px;
-    margin: 0 auto;
+const ShowcaseContainer = styled(SectionContainer)`
+    max-width: ${landingLayout.contentMaxWidthNarrow};
 `;
 
 const Title = styled.h2`
     font-size: 36px;
     font-weight: 700;
-    color: #000;
+    color: ${landingColors.heading};
     text-align: center;
     margin: 0 0 60px 0;
 `;
@@ -59,13 +54,13 @@ const Grid = styled.div`
     grid-template-columns: 1fr 1fr;
     gap: 24px;
 
-    @media (max-width: 768px) {
+    @media (max-width: ${landingLayout.mobile}) {
         grid-template-columns: 1fr;
     }
 `;
 
 const Card = styled.div`
-    background-color: #f5f5f7;
+    background-color: ${landingColors.surfaceCard};
     border-radius: 20px;
     overflow: hidden;
     padding: 32px 32px 28px;
@@ -84,20 +79,20 @@ const CardImage = styled.img`
 const CardTitle = styled.h3`
     font-size: 18px;
     font-weight: 700;
-    color: #000;
+    color: ${landingColors.heading};
     margin: 0 0 8px 0;
 `;
 
 const CardDescription = styled.p`
     font-size: 14px;
-    color: #666;
+    color: ${landingColors.muted};
     margin: 0;
     line-height: 1.6;
 `;
 
 const FeaturesShowcase = () => {
     return (
-        <Container id="features">
+        <Section id="features">
             <ShowcaseContainer>
                 <Title>Everything You Need to Grow Your Career</Title>
                 <Grid>
@@ -112,7 +107,7 @@ const FeaturesShowcase = () => {
                     ))}
                 </Grid>
             </ShowcaseContainer>
-        </Container>
+        </Section>
     );
 };
 
