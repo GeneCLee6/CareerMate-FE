@@ -8,7 +8,13 @@ import { FIELD_OPTIONS } from "../Onboarding/options";
 import logoIcon from "../../assets/logo-icon.png";
 import logoText from "../../assets/logo-text.png";
 
-const Aside = styled.aside`
+const MOBILE = "860px";
+
+/**
+ * A column on desktop. Below the breakpoint it becomes a drawer over the chat,
+ * because hiding it outright left no way to manage resumes on a phone.
+ */
+const Aside = styled.aside<{ $open: boolean }>`
     display: flex;
     flex-direction: column;
     width: 268px;
@@ -17,8 +23,51 @@ const Aside = styled.aside`
     background-color: #fff;
     border-right: 1px solid #eef0f3;
 
-    @media (max-width: 860px) {
-        display: none;
+    @media (max-width: ${MOBILE}) {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 60;
+        width: 284px;
+        max-width: 86vw;
+        overflow-y: auto;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.16);
+        transform: translateX(${({ $open }) => ($open ? "0" : "-100%")});
+        transition: transform 0.25s ease;
+    }
+`;
+
+const Backdrop = styled.div`
+    display: none;
+
+    @media (max-width: ${MOBILE}) {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        background-color: rgba(22, 22, 22, 0.35);
+    }
+`;
+
+/** Only useful in the drawer, so it is hidden on desktop. */
+const CloseButton = styled.button`
+    display: none;
+
+    @media (max-width: ${MOBILE}) {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        top: 18px;
+        right: 16px;
+        width: 32px;
+        height: 32px;
+        color: ${colors.label};
+        background: none;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
     }
 `;
 
@@ -175,6 +224,21 @@ const ProfileValue = styled.span`
     color: ${colors.text};
 `;
 
+const CloseIcon = () => (
+    <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        aria-hidden="true"
+    >
+        <path d="M6 6l12 12M18 6 6 18" />
+    </svg>
+);
+
 const UploadIcon = () => (
     <svg
         width="17"
@@ -261,6 +325,9 @@ export interface ResumeSidebarProps {
     uploading: boolean;
     onUpload: (file: File) => void;
     onDelete: (resume: Resume) => void;
+    /** Drawer state; ignored at desktop widths, where the column is static. */
+    open: boolean;
+    onClose: () => void;
 }
 
 const ResumeSidebar = ({
@@ -269,6 +336,8 @@ const ResumeSidebar = ({
     uploading,
     onUpload,
     onDelete,
+    open,
+    onClose,
 }: ResumeSidebarProps) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -282,8 +351,17 @@ const ResumeSidebar = ({
         FIELD_OPTIONS.find((option) => option.value === user.field)?.label ?? "";
 
     return (
-        <Aside>
-            <Logo>
+        <>
+            {open && <Backdrop onClick={onClose} />}
+            <Aside $open={open}>
+                <CloseButton
+                    type="button"
+                    onClick={onClose}
+                    aria-label="Close resume panel"
+                >
+                    <CloseIcon />
+                </CloseButton>
+                <Logo>
                 <LogoIcon src={logoIcon} alt="" />
                 <LogoText src={logoText} alt="CareerMate AI" />
             </Logo>
@@ -360,7 +438,8 @@ const ResumeSidebar = ({
                     )}
                 </ProfileCard>
             )}
-        </Aside>
+            </Aside>
+        </>
     );
 };
 

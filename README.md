@@ -30,6 +30,7 @@ The app runs at [http://localhost:3000](http://localhost:3000).
 | `npm start`     | Run the dev server with hot reload                 |
 | `npm run build` | Build the production bundle into `build/`          |
 | `npm test`      | Run the test runner in watch mode                  |
+| `CI=true npm test` | Run the suite once, as CI does                  |
 | `npx tsc --noEmit` | Type-check the project without emitting output |
 
 ## Environment variables

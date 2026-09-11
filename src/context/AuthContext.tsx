@@ -3,11 +3,15 @@ import {
     ReactNode,
     useCallback,
     useContext,
+    useEffect,
     useMemo,
+    useRef,
     useState,
 } from "react";
 import { AuthSession, User } from "../api/auth";
-import { setAuthToken } from "../api/client";
+import { setAuthToken, setSessionExpiredHandler } from "../api/client";
+import { getMe } from "../api/users";
+import { useToast } from "../components/Toast";
 
 const STORAGE_KEY = "careermate.session";
 
@@ -74,12 +78,21 @@ function persistedIn(): Storage | null {
     return null;
 }
 
-const initialSession = readStoredSession();
-// Make the restored token available to the API client before the first render.
-setAuthToken(initialSession?.accessToken ?? null);
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const [session, setSession] = useState<AuthSession | null>(initialSession);
+    /**
+     * Restored lazily rather than at module scope, so the token reaches the API
+     * client before the first child renders without the provider depending on
+     * whatever storage held at import time.
+     */
+    const [session, setSession] = useState<AuthSession | null>(() => {
+        const restored = readStoredSession();
+        setAuthToken(restored?.accessToken ?? null);
+        return restored;
+    });
+    const showToast = useToast();
+    // Read inside callbacks without making them depend on the current session.
+    const hasSession = useRef(session !== null);
+    hasSession.current = session !== null;
 
     const signIn = useCallback((next: AuthSession, remember = false) => {
         clearStoredSession();
@@ -109,6 +122,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
             return next;
         });
+    }, []);
+
+    const updateUserRef = useRef(updateUser);
+    updateUserRef.current = updateUser;
+
+    /**
+     * The API client calls this when a request carrying a token is rejected,
+     * which means the token has expired or been revoked. Dropping the session
+     * lets ProtectedRoute bounce the user to login.
+     */
+    useEffect(() => {
+        setSessionExpiredHandler(() => {
+            if (!hasSession.current) return;
+            clearStoredSession();
+            setAuthToken(null);
+            setSession(null);
+            showToast("Your session has expired. Please log in again.");
+        });
+        return () => setSessionExpiredHandler(null);
+    }, [showToast]);
+
+    /**
+     * Re-read the user once on load: it confirms the stored token still works
+     * and picks up anything changed on another device. A 401 is already
+     * handled above; anything else (the API being down) leaves the stored
+     * session alone.
+     */
+    useEffect(() => {
+        if (!hasSession.current) return;
+        let cancelled = false;
+        getMe()
+            .then((user) => {
+                if (!cancelled) updateUserRef.current(user);
+            })
+            .catch(() => {
+                // Offline or a server error shouldn't log anyone out.
+            });
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     const value = useMemo<AuthContextValue>(

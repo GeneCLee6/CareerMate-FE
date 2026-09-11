@@ -27,7 +27,10 @@ export function updatePassword(input: {
     newPassword: string;
 }): Promise<string> {
     return apiClient
-        .put<SuccessMessage>("/users/me/password", input)
+        .put<SuccessMessage>("/users/me/password", input, {
+            // The server answers 401 when the current password is wrong.
+            handlesUnauthorized: true,
+        })
         .then((res) => res.message);
 }
 
