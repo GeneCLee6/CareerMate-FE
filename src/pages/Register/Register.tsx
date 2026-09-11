@@ -1,213 +1,240 @@
-import { ChangeEvent, FormEvent, useState } from "react";
+import { FormEvent, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import TextInput from "../../components/TextInput";
-import useEmail from "../../hooks/useEmail";
-import usePassword from "../../hooks/usePassword";
-import { useNavigate } from "react-router-dom";
-import { validateRegister } from "../../utils/validators";
-import { RequestStatus } from "../../types";
+import AuthLayout from "../../components/AuthLayout";
+import TextField from "../../components/TextField";
+import PasswordField from "../../components/PasswordField";
+import GradientButton from "../../components/GradientButton";
+import AlertBanner from "../../components/AlertBanner";
+import Modal from "../../components/Modal";
+import SuccessMessage from "../../components/SuccessMessage";
+import { useAuth } from "../../context/AuthContext";
+import { ApiError } from "../../api/client";
+import * as authApi from "../../api/auth";
+import {
+    FieldErrors,
+    RegisterFormValues,
+    validateRegisterForm,
+} from "../../utils/validators";
+import { colors, gradient } from "../../styles/tokens";
 
-const AuthPage = styled.div`
-    min-height: 100vh;
+const Title = styled.h1`
+    margin: 0 0 8px;
+    font-size: 40px;
+    font-weight: 900;
+    line-height: 1.2;
+    color: ${colors.text};
+`;
+
+const Subtitle = styled.p`
+    margin: 0;
+    font-size: 15px;
+    color: ${colors.textMuted};
+`;
+
+const Form = styled.form`
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 40px;
+`;
+
+const BannerSlot = styled.div`
+    margin-top: 16px;
+`;
+
+const Footer = styled.p`
+    margin: 0;
+    text-align: center;
+    font-size: 14px;
+    color: ${colors.textMuted};
+`;
+
+const TextLink = styled(Link)`
+    color: ${colors.link};
+    text-decoration: none;
+    font-weight: 500;
+
+    &:hover {
+        text-decoration: underline;
+    }
+`;
+
+const WarningIcon = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 2.5rem 1rem;
-    background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 50%, #ecfeff 100%);
+    width: 44px;
+    height: 44px;
+    margin: 0 auto 16px;
+    font-size: 24px;
+    font-weight: 700;
+    color: #fff;
+    background-color: ${colors.warning};
+    border-radius: 50%;
 `;
 
-const AuthCard = styled.div`
-    width: 100%;
-    max-width: 28rem;
-    padding: 2rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 1.25rem;
-    background: rgba(255, 255, 255, 0.95);
-    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
-    backdrop-filter: blur(10px);
+const ModalText = styled.p`
+    margin: 0 0 24px;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: ${colors.text};
 `;
 
-const PageTitle = styled.h1`
-    margin-bottom: 1.5rem;
-    text-align: center;
-    font-size: 1.875rem;
-    font-weight: 600;
-    color: #0f172a;
+const ModalButton = styled(Link)`
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    padding: 0 28px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #fff;
+    background: ${gradient};
+    border-radius: 20px;
+    text-decoration: none;
 `;
 
-const AuthForm = styled.form`
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-`;
-
-const SubmitButton = styled.button`
-    width: 100%;
-    border: none;
-    border-radius: 0.75rem;
-    padding: 0.75rem 1rem;
-    background: #0284c7;
-    color: #ffffff;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s ease;
-
-    &:hover {
-        background: #0369a1;
-    }
-`;
-
-const FeedbackText = styled.p<{ $status: RequestStatus }>`
-    font-size: 0.875rem;
-    color: ${({ $status }) => ($status === "error" ? "#ef4444" : "#16a34a")};
-`;
-
-const SwitchText = styled.p`
-    padding-top: 0.5rem;
-    text-align: center;
-    font-size: 0.875rem;
-    color: #475569;
-`;
-
-const SwitchLink = styled.span`
-    margin-left: 0.25rem;
-    font-weight: 600;
-    color: #0284c7;
-    cursor: pointer;
-
-    &:hover {
-        color: #0369a1;
-    }
-`;
+const EMPTY: RegisterFormValues = { fullName: "", email: "", password: "" };
 
 const Register = () => {
-    const { email, emailError, emailChange } = useEmail();
-    const { password, passwordError, passwordChange } = usePassword();
+    const [values, setValues] = useState<RegisterFormValues>(EMPTY);
+    const [errors, setErrors] = useState<FieldErrors<RegisterFormValues>>({});
+    const [banner, setBanner] = useState<string | null>(null);
+    const [submitting, setSubmitting] = useState(false);
+    const [succeeded, setSucceeded] = useState(false);
+    /** The design shows a dedicated modal for an already-registered email. */
+    const [emailTaken, setEmailTaken] = useState(false);
 
-    const [name, setName] = useState("");
-    const [nameError, setNameError] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
-    const [confirmPasswordError, setConfirmPasswordError] = useState("");
-
-    const [status, setStatus] = useState<RequestStatus>("idle");
-    const [error, setError] = useState("");
-
+    const { signIn } = useAuth();
     const navigate = useNavigate();
 
-    function mockRegister(
-        name: string,
-        email: string,
-        password: string
-    ): Promise<void> {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve();
-            }, 1000);
-        });
-    }
-
-    function nameChange(e: ChangeEvent<HTMLInputElement>) {
-        const value = e.target.value;
-        setName(value);
-        if (!value.trim()) {
-            setNameError("Name is required");
-        } else {
-            setNameError("");
-        }
-    }
-
-    function confirmPasswordChange(e: ChangeEvent<HTMLInputElement>) {
-        const value = e.target.value;
-        setConfirmPassword(value);
-        if (!value.trim()) {
-            setConfirmPasswordError("Please confirm your password");
-        } else if (value !== password) {
-            setConfirmPasswordError("Passwords do not match");
-        } else {
-            setConfirmPasswordError("");
-        }
-    }
+    const setValue = (key: keyof RegisterFormValues, value: string) => {
+        setValues((prev) => ({ ...prev, [key]: value }));
+    };
 
     async function handleSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        setError("");
 
-        const errMsg = validateRegister(name, email, password, confirmPassword);
-        if (errMsg) {
-            setStatus("error");
-            setError(errMsg);
+        const nextErrors = validateRegisterForm(values);
+        setErrors(nextErrors);
+
+        const firstError = Object.values(nextErrors)[0];
+        if (firstError) {
+            setBanner(firstError);
             return;
         }
-        try {
-            setStatus("loading");
 
-            await mockRegister(name, email, password);
-            setStatus("success");
-            setTimeout(() => {
-                navigate("/login");
-            }, 1000);
+        setBanner(null);
+        setSubmitting(true);
+
+        try {
+            const session = await authApi.register({
+                fullName: values.fullName.trim(),
+                email: values.email.trim(),
+                password: values.password,
+            });
+
+            setSucceeded(true);
+            // The design logs the new account straight in after a short beat.
+            window.setTimeout(() => {
+                signIn(session, true);
+                navigate("/", { replace: true });
+            }, 1200);
         } catch (err) {
-            setStatus("error");
-            setError(
-                err instanceof Error ? err.message : "Something went wrong"
-            );
+            if (err instanceof ApiError && err.status === 409) {
+                setEmailTaken(true);
+            } else if (err instanceof ApiError) {
+                setBanner(
+                    err.isNetworkError ? `\u{1F50C} ${err.message}` : err.message
+                );
+            } else {
+                setBanner("Something went wrong. Please try again.");
+            }
+            setSubmitting(false);
         }
     }
 
+    if (succeeded) {
+        return (
+            <AuthLayout showPanel={false}>
+                <SuccessMessage message="🎉 Registration successful! Logging you in..." />
+            </AuthLayout>
+        );
+    }
+
     return (
-        <AuthPage>
-            <AuthCard>
-                <PageTitle>CareerMate Register</PageTitle>
-                <AuthForm onSubmit={handleSubmit}>
-                    <TextInput
-                        label="Name"
-                        type="text"
-                        value={name}
-                        onChange={nameChange}
-                        error={nameError}
-                        autoFocus
-                    />
-                    <TextInput
-                        label="Email"
-                        type="email"
-                        value={email}
-                        onChange={emailChange}
-                        error={emailError}
-                    />
-                    <TextInput
-                        label="Password"
-                        type="password"
-                        value={password}
-                        onChange={passwordChange}
-                        error={passwordError}
-                    />
-                    <TextInput
-                        label="Confirm Password"
-                        type="password"
-                        value={confirmPassword}
-                        onChange={confirmPasswordChange}
-                        error={confirmPasswordError}
-                    />
-                    <SubmitButton>
-                        {status === "loading" ? "Registering..." : "Register"}
-                    </SubmitButton>
-                    {status === "error" && (
-                        <FeedbackText $status="error">{error}</FeedbackText>
-                    )}
-                    {status === "success" && (
-                        <FeedbackText $status="success">
-                            Register Success
-                        </FeedbackText>
-                    )}
-                    <SwitchText>
-                        Already have an account?
-                        <SwitchLink onClick={() => navigate("/login")}>
-                            Login
-                        </SwitchLink>
-                    </SwitchText>
-                </AuthForm>
-            </AuthCard>
-        </AuthPage>
+        <AuthLayout>
+            <Title>Create Your Account</Title>
+            <Subtitle>
+                Join CareerMate AI and start your smart career journey
+            </Subtitle>
+
+            {banner && (
+                <BannerSlot>
+                    <AlertBanner>{banner}</AlertBanner>
+                </BannerSlot>
+            )}
+
+            <Form onSubmit={handleSubmit} noValidate>
+                <TextField
+                    id="fullName"
+                    name="fullName"
+                    label="Full Name"
+                    placeholder="Your full name"
+                    autoComplete="name"
+                    value={values.fullName}
+                    invalid={Boolean(errors.fullName)}
+                    onChange={(e) => setValue("fullName", e.target.value)}
+                />
+                <TextField
+                    id="email"
+                    name="email"
+                    type="email"
+                    label="Email"
+                    placeholder="Your email"
+                    autoComplete="email"
+                    value={values.email}
+                    invalid={Boolean(errors.email)}
+                    onChange={(e) => setValue("email", e.target.value)}
+                />
+                <PasswordField
+                    id="password"
+                    name="password"
+                    label="Password"
+                    placeholder="Create a password"
+                    autoComplete="new-password"
+                    value={values.password}
+                    invalid={Boolean(errors.password)}
+                    onChange={(e) => setValue("password", e.target.value)}
+                />
+
+                <GradientButton type="submit" disabled={submitting}>
+                    {submitting ? "Creating account..." : "Create Account"}
+                </GradientButton>
+
+                <Footer>
+                    Already have an account?{" "}
+                    <TextLink to="/login">Log in</TextLink>
+                </Footer>
+            </Form>
+
+            {emailTaken && (
+                <Modal
+                    onClose={() => setEmailTaken(false)}
+                    labelledBy="email-taken"
+                >
+                    <WarningIcon aria-hidden="true">!</WarningIcon>
+                    <ModalText id="email-taken">
+                        Email already registered,
+                        <br />
+                        please log in instead
+                    </ModalText>
+                    <ModalButton to="/login">Go to login</ModalButton>
+                </Modal>
+            )}
+        </AuthLayout>
     );
 };
 

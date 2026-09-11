@@ -1,0 +1,79 @@
+import { apiClient } from "./client";
+
+/** Mirrors the fields the backend's user model exposes through toJSON. */
+export interface User {
+    id: string;
+    email: string;
+    fullName: string;
+    displayName?: string;
+    role?: "Student" | "Other";
+    field?: "FE" | "BE";
+    goal?: string;
+    avatar?: string;
+    avatarUrl?: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
+interface SuccessData<T> {
+    success: true;
+    data: T;
+}
+
+interface SuccessMessage {
+    success: true;
+    message: string;
+}
+
+export interface AuthSession {
+    user: User;
+    accessToken: string;
+}
+
+export interface RegisterInput {
+    fullName: string;
+    email: string;
+    password: string;
+}
+
+export interface LoginInput {
+    email: string;
+    password: string;
+}
+
+export function register(input: RegisterInput): Promise<AuthSession> {
+    return apiClient
+        .post<SuccessData<AuthSession>>("/auth/register", input)
+        .then((res) => res.data);
+}
+
+export function login(input: LoginInput): Promise<AuthSession> {
+    return apiClient
+        .post<SuccessData<AuthSession>>("/auth/login", input)
+        .then((res) => res.data);
+}
+
+export function forgotPassword(email: string): Promise<string> {
+    return apiClient
+        .post<SuccessMessage>("/auth/forgot-password", { email })
+        .then((res) => res.message);
+}
+
+export function verifyCode(email: string, code: string): Promise<string> {
+    return apiClient
+        .post<SuccessData<{ resetToken: string }>>("/auth/verify-code", {
+            email,
+            code,
+        })
+        .then((res) => res.data.resetToken);
+}
+
+export function resetPassword(input: {
+    email: string;
+    resetToken: string;
+    newPassword: string;
+}): Promise<string> {
+    return apiClient
+        .post<SuccessMessage>("/auth/reset-password", input)
+        .then((res) => res.message);
+}
