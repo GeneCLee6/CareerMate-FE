@@ -78,13 +78,18 @@ const Panel = styled.aside`
 /**
  * The exported artwork already carries its rounded corners and the testimonial
  * card that overhangs to the left, so it is scaled whole rather than cropped.
+ *
+ * Both dimensions are auto and bounded by max-*: setting one to 100% and
+ * letting the other be clamped by a max distorts the image, because the clamp
+ * does not feed back into the computed side. Capping at the natural size also
+ * keeps the 1x asset from being upscaled into a blur.
  */
 const PanelImage = styled.img`
     display: block;
-    height: 100%;
-    max-height: calc(100vh - 48px);
     width: auto;
+    height: auto;
     max-width: 100%;
+    max-height: calc(100vh - 48px);
 `;
 
 export interface AuthLayoutProps {
