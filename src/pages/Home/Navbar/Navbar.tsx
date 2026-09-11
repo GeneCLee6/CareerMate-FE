@@ -1,4 +1,7 @@
-import styled from "styled-components";
+import { Link as RouterLink } from "react-router-dom";
+import styled, { css } from "styled-components";
+import UserMenu from "../../../components/UserMenu";
+import { useAuth } from "../../../context/AuthContext";
 import { landingColors, landingLayout } from "../../../styles/tokens";
 import logoIcon from "../../../assets/logo-icon.png";
 import logoText from "../../../assets/logo-text.png";
@@ -52,7 +55,7 @@ const Links = styled.div`
     }
 `;
 
-const Link = styled.a`
+const linkStyles = css`
     text-decoration: none;
     color: ${landingColors.body};
     font-size: 15px;
@@ -68,18 +71,24 @@ const Link = styled.a`
     }
 `;
 
+/** In-page anchors stay plain <a> so they keep native hash scrolling. */
+const Link = styled.a`
+    ${linkStyles}
+`;
+
 const Buttons = styled.div`
     display: flex;
     align-items: center;
     gap: 16px;
 `;
 
-const SignInButton = styled(Link)`
+const SignInButton = styled(RouterLink)`
+    ${linkStyles}
     font-weight: 500;
     padding: 8px 16px;
 `;
 
-const StartButton = styled.a`
+const StartButton = styled(RouterLink)`
     text-decoration: none;
     background-color: ${landingColors.heading};
     color: ${landingColors.surface};
@@ -100,6 +109,8 @@ const StartButton = styled.a`
 `;
 
 const Navbar = () => {
+    const { isAuthenticated } = useAuth();
+
     return (
         <Container>
             <NavContainer>
@@ -112,8 +123,16 @@ const Navbar = () => {
                     <Link href="#demo">Demo</Link>
                 </Links>
                 <Buttons>
-                    <SignInButton href="#signin">Sign In</SignInButton>
-                    <StartButton href="#start">Start for Free</StartButton>
+                    {isAuthenticated ? (
+                        <UserMenu variant="landing" />
+                    ) : (
+                        <>
+                            <SignInButton to="/login">Sign In</SignInButton>
+                            <StartButton to="/register">
+                                Start for Free
+                            </StartButton>
+                        </>
+                    )}
                 </Buttons>
             </NavContainer>
         </Container>

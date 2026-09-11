@@ -12,19 +12,34 @@ const Wrapper = styled.div`
     font-family: ${fontFamily};
 `;
 
-const Trigger = styled.button`
+const Trigger = styled.button<{ $withName: boolean }>`
     display: flex;
     align-items: center;
+    gap: 10px;
     padding: 0;
     background: none;
     border: none;
-    border-radius: 50%;
+    border-radius: ${({ $withName }) => ($withName ? "20px" : "50%")};
     cursor: pointer;
 
     &:focus-visible {
         outline: 2px solid ${colors.borderFocus};
         outline-offset: 2px;
     }
+`;
+
+const TriggerName = styled.span`
+    font-size: 15px;
+    font-weight: 700;
+    color: ${colors.text};
+    white-space: nowrap;
+`;
+
+const Caret = styled.span<{ $open: boolean }>`
+    display: flex;
+    color: ${colors.text};
+    transform: rotate(${({ $open }) => ($open ? "180deg" : "0deg")});
+    transition: transform 0.2s ease;
 `;
 
 const Menu = styled.div`
@@ -120,6 +135,22 @@ const ConfirmButton = styled.button`
     }
 `;
 
+const CaretIcon = () => (
+    <svg
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <path d="m6 9 6 6 6-6" />
+    </svg>
+);
+
 const GearIcon = () => (
     <svg
         width="18"
@@ -154,11 +185,20 @@ const LogoutIcon = () => (
     </svg>
 );
 
+export interface UserMenuProps {
+    /**
+     * "app" is the signed-in shell: avatar only, with the email and a link to
+     * Personal Settings above Logout. "landing" is the marketing navbar, which
+     * shows the name beside the avatar and offers Logout alone.
+     */
+    variant?: "app" | "landing";
+}
+
 /**
  * Avatar button with the account dropdown, plus the logout confirmation and
  * the toast that follows it.
  */
-const UserMenu = () => {
+const UserMenu = ({ variant = "app" }: UserMenuProps) => {
     const [open, setOpen] = useState(false);
     const [confirmingLogout, setConfirmingLogout] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
@@ -200,28 +240,43 @@ const UserMenu = () => {
         <Wrapper ref={wrapperRef}>
             <Trigger
                 type="button"
+                $withName={variant === "landing"}
                 onClick={() => setOpen((prev) => !prev)}
                 aria-haspopup="menu"
                 aria-expanded={open}
                 aria-label="Account menu"
             >
                 <Avatar name={user.fullName} src={user.avatarUrl} size={34} />
+                {variant === "landing" && (
+                    <>
+                        <TriggerName>
+                            {user.displayName || user.fullName}
+                        </TriggerName>
+                        <Caret $open={open}>
+                            <CaretIcon />
+                        </Caret>
+                    </>
+                )}
             </Trigger>
 
             {open && (
                 <Menu role="menu">
-                    <Email>{user.email}</Email>
-                    <Item
-                        type="button"
-                        role="menuitem"
-                        onClick={() => {
-                            setOpen(false);
-                            navigate("/settings");
-                        }}
-                    >
-                        <GearIcon />
-                        Personal Settings
-                    </Item>
+                    {variant === "app" && (
+                        <>
+                            <Email>{user.email}</Email>
+                            <Item
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                    setOpen(false);
+                                    navigate("/settings");
+                                }}
+                            >
+                                <GearIcon />
+                                Personal Settings
+                            </Item>
+                        </>
+                    )}
                     <Item
                         type="button"
                         role="menuitem"
