@@ -12,6 +12,7 @@ import CareerPanel from "./CareerPanel";
 import SecurityPanel from "./SecurityPanel";
 import { FIELD_OPTIONS } from "../Onboarding/options";
 import { colors, fontFamily } from "../../styles/tokens";
+import { AVATAR_ACCEPT, validateAvatarFile } from "../../utils/fileValidation";
 
 const Page = styled.div`
     min-height: 100vh;
@@ -270,6 +271,13 @@ const Settings = () => {
         e.target.value = "";
         if (!file) return;
 
+        // Reject what the server would reject, before spending the upload.
+        const problem = validateAvatarFile(file);
+        if (problem) {
+            showToast(problem, 5000);
+            return;
+        }
+
         setUploading(true);
         try {
             const fileKey = await uploadFile(file, "avatar");
@@ -280,7 +288,8 @@ const Settings = () => {
             showToast(
                 err instanceof ApiError
                     ? err.message
-                    : "Upload failed. Please try again."
+                    : "Upload failed. Please try again.",
+                5000
             );
         } finally {
             setUploading(false);
@@ -339,7 +348,7 @@ const Settings = () => {
                     <input
                         ref={fileInputRef}
                         type="file"
-                        accept="image/jpeg,image/png,image/webp"
+                        accept={AVATAR_ACCEPT}
                         hidden
                         onChange={handleAvatarChange}
                     />

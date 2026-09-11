@@ -4,6 +4,7 @@ import Avatar from "../../components/Avatar";
 import { Resume } from "../../api/resumes";
 import { User } from "../../api/auth";
 import { colors } from "../../styles/tokens";
+import { RESUME_ACCEPT } from "../../utils/fileValidation";
 import { FIELD_OPTIONS } from "../Onboarding/options";
 import logoIcon from "../../assets/logo-icon.png";
 import logoText from "../../assets/logo-text.png";
@@ -125,6 +126,24 @@ const EmptyHint = styled.p`
     font-size: 12px;
     color: ${colors.placeholder};
     text-align: center;
+`;
+
+/** Stays put until the next attempt, unlike the toast, which times out. */
+const UploadError = styled.p`
+    margin: 12px 0 0;
+    padding: 8px 12px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: ${colors.danger};
+    background-color: ${colors.dangerSurface};
+    border-radius: 8px;
+`;
+
+const UploadingHint = styled.p`
+    margin: 12px 0 0;
+    font-size: 12px;
+    color: ${colors.label};
+    overflow-wrap: anywhere;
 `;
 
 const ResumeList = styled.ul`
@@ -325,6 +344,10 @@ export interface ResumeSidebarProps {
     uploading: boolean;
     onUpload: (file: File) => void;
     onDelete: (resume: Resume) => void;
+    /** Name of the file currently uploading, if any. */
+    uploadingName: string | null;
+    /** Why the last attempt failed; cleared when a new one starts. */
+    uploadError: string | null;
     /** Drawer state; ignored at desktop widths, where the column is static. */
     open: boolean;
     onClose: () => void;
@@ -338,6 +361,8 @@ const ResumeSidebar = ({
     onDelete,
     open,
     onClose,
+    uploadingName,
+    uploadError,
 }: ResumeSidebarProps) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -382,12 +407,18 @@ const ResumeSidebar = ({
             <input
                 ref={fileInputRef}
                 type="file"
-                accept="application/pdf"
+                accept={RESUME_ACCEPT}
                 hidden
                 onChange={handleChange}
             />
 
-            {resumes.length === 0 ? (
+            {uploading && uploadingName && (
+                <UploadingHint>Uploading {uploadingName}…</UploadingHint>
+            )}
+
+            {uploadError && <UploadError role="alert">{uploadError}</UploadError>}
+
+            {resumes.length === 0 && !uploading ? (
                 <EmptyHint>You haven&apos;t uploaded a resume</EmptyHint>
             ) : (
                 <ResumeList>
