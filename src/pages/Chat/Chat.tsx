@@ -34,8 +34,31 @@ const Main = styled.div`
 
 const TopBar = styled.div`
     display: flex;
-    justify-content: flex-end;
+    align-items: center;
+    justify-content: space-between;
     padding: 16px 24px;
+`;
+
+/** Opens the resume drawer; the sidebar is a static column above this width. */
+const MenuButton = styled.button`
+    display: none;
+
+    @media (max-width: 860px) {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        color: ${colors.text};
+        background: none;
+        border: 1px solid ${colors.border};
+        border-radius: 10px;
+        cursor: pointer;
+    }
+`;
+
+const TopBarSpacer = styled.div`
+    flex: 1;
 `;
 
 const Thread = styled.div`
@@ -203,6 +226,21 @@ const SendButton = styled.button`
     }
 `;
 
+const MenuIcon = () => (
+    <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        aria-hidden="true"
+    >
+        <path d="M4 7h16M4 12h16M4 17h16" />
+    </svg>
+);
+
 const PlusIcon = () => (
     <svg
         width="18"
@@ -254,6 +292,7 @@ const Chat = () => {
     const [resumes, setResumes] = useState<Resume[]>([]);
     const [uploading, setUploading] = useState(false);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [drawerOpen, setDrawerOpen] = useState(false);
     const [draft, setDraft] = useState("");
     const threadRef = useRef<HTMLDivElement>(null);
 
@@ -346,10 +385,20 @@ const Chat = () => {
                 uploading={uploading}
                 onUpload={handleUpload}
                 onDelete={handleDelete}
+                open={drawerOpen}
+                onClose={() => setDrawerOpen(false)}
             />
 
             <Main>
                 <TopBar>
+                    <MenuButton
+                        type="button"
+                        onClick={() => setDrawerOpen(true)}
+                        aria-label="Open resume panel"
+                    >
+                        <MenuIcon />
+                    </MenuButton>
+                    <TopBarSpacer />
                     <UserMenu />
                 </TopBar>
 

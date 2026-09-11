@@ -35,6 +35,16 @@ export function setAuthToken(token: string | null) {
     authToken = token;
 }
 
+/**
+ * Called when a request that carried a token is rejected with 401, meaning the
+ * session is no longer good. AuthContext registers the handler that clears it.
+ */
+let onSessionExpired: (() => void) | null = null;
+
+export function setSessionExpiredHandler(handler: (() => void) | null) {
+    onSessionExpired = handler;
+}
+
 type Method = "GET" | "POST" | "PUT" | "DELETE";
 
 interface RequestOptions {
@@ -42,12 +52,19 @@ interface RequestOptions {
     /** Overrides the stored token; mainly useful in tests. */
     token?: string | null;
     signal?: AbortSignal;
+    /**
+     * Set by callers whose endpoint answers 401 for its own reasons rather
+     * than because the session died — login rejecting credentials, settings
+     * rejecting the current password, a mistyped reset code. Without it those
+     * would sign the user out mid-flow.
+     */
+    handlesUnauthorized?: boolean;
 }
 
 async function request<TResponse>(
     method: Method,
     path: string,
-    { body, token, signal }: RequestOptions = {}
+    { body, token, signal, handlesUnauthorized }: RequestOptions = {}
 ): Promise<TResponse> {
     const bearer = token === undefined ? authToken : token;
     let response: Response;
@@ -77,6 +94,11 @@ async function request<TResponse>(
         | null;
 
     if (!response.ok) {
+        // Only a request that actually presented a token can have an expired
+        // one; a 401 without one is just a rejected sign-in.
+        if (response.status === 401 && bearer && !handlesUnauthorized) {
+            onSessionExpired?.();
+        }
         const message =
             (payload as ErrorBody | null)?.error?.message ??
             "Something went wrong. Please try again.";

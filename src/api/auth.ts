@@ -39,7 +39,10 @@ export function register(input: RegisterInput): Promise<AuthSession> {
 
 export function login(input: LoginInput): Promise<AuthSession> {
     return apiClient
-        .post<SuccessData<AuthSession>>("/auth/login", input)
+        .post<SuccessData<AuthSession>>("/auth/login", input, {
+            // A rejected sign-in is a 401 about the credentials, not the session.
+            handlesUnauthorized: true,
+        })
         .then((res) => res.data);
 }
 
@@ -51,10 +54,12 @@ export function forgotPassword(email: string): Promise<string> {
 
 export function verifyCode(email: string, code: string): Promise<string> {
     return apiClient
-        .post<SuccessData<{ resetToken: string }>>("/auth/verify-code", {
-            email,
-            code,
-        })
+        .post<SuccessData<{ resetToken: string }>>(
+            "/auth/verify-code",
+            { email, code },
+            // A wrong or expired code is a 401 about the code.
+            { handlesUnauthorized: true }
+        )
         .then((res) => res.data.resetToken);
 }
 
@@ -64,6 +69,9 @@ export function resetPassword(input: {
     newPassword: string;
 }): Promise<string> {
     return apiClient
-        .post<SuccessMessage>("/auth/reset-password", input)
+        .post<SuccessMessage>("/auth/reset-password", input, {
+            // A stale reset token is a 401 about that token.
+            handlesUnauthorized: true,
+        })
         .then((res) => res.message);
 }

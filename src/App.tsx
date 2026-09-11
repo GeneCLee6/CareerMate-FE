@@ -16,9 +16,10 @@ import { AuthProvider } from "./context/AuthContext";
 import { ToastProvider } from "./components/Toast";
 
 function App() {
+    // Toasts wrap auth: AuthProvider raises one when a session expires.
     return (
-        <AuthProvider>
-            <ToastProvider>
+        <ToastProvider>
+            <AuthProvider>
                 <Router>
                     <div className="App">
                         <Routes>
@@ -60,8 +61,8 @@ function App() {
                         </Routes>
                     </div>
                 </Router>
-            </ToastProvider>
-        </AuthProvider>
+            </AuthProvider>
+        </ToastProvider>
     );
 }
 
