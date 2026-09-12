@@ -31,10 +31,33 @@ export interface LoginInput {
     password: string;
 }
 
-export function register(input: RegisterInput): Promise<AuthSession> {
+/**
+ * Registering no longer signs the account in: the backend creates it unverified
+ * and emails a code. All that comes back is the address the code went to.
+ */
+export function register(input: RegisterInput): Promise<string> {
     return apiClient
-        .post<SuccessData<AuthSession>>("/auth/register", input)
+        .post<SuccessData<{ email: string }>>("/auth/register", input)
+        .then((res) => res.data.email);
+}
+
+/** Confirms the emailed code. On success the account is live and signed in. */
+export function verifyEmail(email: string, code: string): Promise<AuthSession> {
+    return apiClient
+        .post<SuccessData<AuthSession>>(
+            "/auth/verify-email",
+            { email, code },
+            // A wrong or expired code is a 401 about the code, not the session.
+            { handlesUnauthorized: true }
+        )
         .then((res) => res.data);
+}
+
+/** Sends a fresh code. The backend refuses with 429 inside its cooldown. */
+export function resendVerification(email: string): Promise<string> {
+    return apiClient
+        .post<SuccessMessage>("/auth/resend-verification", { email })
+        .then((res) => res.message);
 }
 
 export function login(input: LoginInput): Promise<AuthSession> {
