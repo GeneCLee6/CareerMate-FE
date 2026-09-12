@@ -13,6 +13,7 @@ import Onboarding from "./pages/Onboarding";
 import Chat from "./pages/Chat";
 import Settings from "./pages/Settings";
 import ProtectedRoute from "./components/ProtectedRoute";
+import GuestOnlyRoute from "./components/GuestOnlyRoute";
 import { AuthProvider } from "./context/AuthContext";
 import { ToastProvider } from "./components/Toast";
 
@@ -25,15 +26,33 @@ function App() {
                     <div className="App">
                         <Routes>
                             <Route path="/" element={<Home />} />
-                            <Route path="/login" element={<Login />} />
-                            <Route path="/register" element={<Register />} />
+                            <Route
+                                path="/login"
+                                element={
+                                    <GuestOnlyRoute>
+                                        <Login />
+                                    </GuestOnlyRoute>
+                                }
+                            />
+                            <Route
+                                path="/register"
+                                element={
+                                    <GuestOnlyRoute>
+                                        <Register />
+                                    </GuestOnlyRoute>
+                                }
+                            />
                             <Route
                                 path="/verify-email"
                                 element={<VerifyEmail />}
                             />
                             <Route
                                 path="/forgot-password"
-                                element={<ForgotPassword />}
+                                element={
+                                    <GuestOnlyRoute>
+                                        <ForgotPassword />
+                                    </GuestOnlyRoute>
+                                }
                             />
                             <Route
                                 path="/onboarding"

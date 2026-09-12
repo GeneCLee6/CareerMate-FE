@@ -1,5 +1,6 @@
 import { Link as RouterLink } from "react-router-dom";
 import styled from "styled-components";
+import { useAuth } from "../../../context/AuthContext";
 import { landingColors, landingGradients } from "../../../styles/tokens";
 
 const Container = styled.section`
@@ -65,6 +66,12 @@ const Button = styled(RouterLink)`
 `;
 
 const CTA = () => {
+    const { isAuthenticated } = useAuth();
+    // Signed in, "start" means the assistant, not the sign-up form. The label
+    // is deliberately unchanged: the landing page must look identical in both
+    // states (RULES.md §7), and only where the button goes is wrong.
+    const startTo = isAuthenticated ? "/app" : "/register";
+
     return (
         <Container>
             <CTAContainer>
@@ -76,7 +83,7 @@ const CTA = () => {
                         It’s free, smart, and made for you.
                     </Subtitle>
                 </Card>
-                <Button to="/register">Start Practingcing for Free</Button>
+                <Button to={startTo}>Start Practingcing for Free</Button>
             </CTAContainer>
         </Container>
     );

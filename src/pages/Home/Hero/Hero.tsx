@@ -7,6 +7,7 @@ import {
     landingLayout,
 } from "../../../styles/tokens";
 import heroDecorationImg from "../../../assets/arrow-decoration.png";
+import { useAuth } from "../../../context/AuthContext";
 
 const Container = styled.section`
     width: 100%;
@@ -114,6 +115,12 @@ const HeroDecoration = styled.img`
 `;
 
 const Hero = () => {
+    const { isAuthenticated } = useAuth();
+    // Signed in, "start" means the assistant, not the sign-up form. The label
+    // is deliberately unchanged: the landing page must look identical in both
+    // states (RULES.md §7), and only where the button goes is wrong.
+    const startTo = isAuthenticated ? "/app" : "/register";
+
     return (
         <Container>
             <HeroContainer>
@@ -125,7 +132,7 @@ const Hero = () => {
                         CareerMate AI coaches you step by step.
                     </Description>
                     <Buttons>
-                        <PrimaryButton to="/register">
+                        <PrimaryButton to={startTo}>
                             Start for Free
                             <ArrowIcon />
                         </PrimaryButton>
