@@ -303,6 +303,7 @@ const Chat = () => {
     const [resumes, setResumes] = useState<Resume[]>([]);
     const [uploading, setUploading] = useState(false);
     const [uploadingName, setUploadingName] = useState<string | null>(null);
+    const [uploadProgress, setUploadProgress] = useState(0);
     const [uploadError, setUploadError] = useState<string | null>(null);
     const [messages, setMessages] = useState<ApiChatMessage[]>([]);
     const [conversationId, setConversationId] = useState<string | null>(null);
@@ -364,9 +365,10 @@ const Chat = () => {
 
             setUploadError(null);
             setUploadingName(file.name);
+            setUploadProgress(0);
             setUploading(true);
             try {
-                const resume = await uploadResume(file);
+                const resume = await uploadResume(file, setUploadProgress);
                 setResumes((prev) => [resume, ...prev]);
                 showToast("Resume uploaded");
             } catch (err) {
@@ -380,6 +382,7 @@ const Chat = () => {
             } finally {
                 setUploading(false);
                 setUploadingName(null);
+                setUploadProgress(0);
             }
         },
         [showToast]
@@ -466,6 +469,7 @@ const Chat = () => {
                 open={drawerOpen}
                 onClose={() => setDrawerOpen(false)}
                 uploadingName={uploadingName}
+                uploadProgress={uploadProgress}
                 uploadError={uploadError}
             />
 

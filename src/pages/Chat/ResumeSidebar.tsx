@@ -3,7 +3,7 @@ import styled from "styled-components";
 import Avatar from "../../components/Avatar";
 import { Resume } from "../../api/resumes";
 import { User } from "../../api/auth";
-import { colors } from "../../styles/tokens";
+import { colors, gradient } from "../../styles/tokens";
 import { RESUME_ACCEPT } from "../../utils/fileValidation";
 import { FIELD_OPTIONS } from "../Onboarding/options";
 import logoIcon from "../../assets/logo-icon.png";
@@ -144,6 +144,42 @@ const UploadingHint = styled.p`
     font-size: 12px;
     color: ${colors.label};
     overflow-wrap: anywhere;
+`;
+
+const ProgressRow = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+`;
+
+const ProgressTrack = styled.div`
+    flex: 1;
+    height: 6px;
+    background-color: #efeff4;
+    border-radius: 3px;
+    overflow: hidden;
+`;
+
+/**
+ * The filled part. Width is a style prop rather than a class because it
+ * changes on every progress event, and generating a class per percentage
+ * would leave hundreds of rules behind in a single upload.
+ */
+const ProgressFill = styled.div`
+    height: 100%;
+    background: ${gradient};
+    border-radius: 3px;
+    /* Smooths the jumps between chunks without lagging behind the upload. */
+    transition: width 160ms ease-out;
+`;
+
+const ProgressValue = styled.span`
+    min-width: 34px;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    color: ${colors.label};
 `;
 
 const ResumeList = styled.ul`
@@ -346,6 +382,8 @@ export interface ResumeSidebarProps {
     onDelete: (resume: Resume) => void;
     /** Name of the file currently uploading, if any. */
     uploadingName: string | null;
+    /** 0 to 1 while a file is uploading. */
+    uploadProgress: number;
     /** Why the last attempt failed; cleared when a new one starts. */
     uploadError: string | null;
     /** Drawer state; ignored at desktop widths, where the column is static. */
@@ -362,6 +400,7 @@ const ResumeSidebar = ({
     open,
     onClose,
     uploadingName,
+    uploadProgress,
     uploadError,
 }: ResumeSidebarProps) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -413,7 +452,29 @@ const ResumeSidebar = ({
             />
 
             {uploading && uploadingName && (
-                <UploadingHint>Uploading {uploadingName}…</UploadingHint>
+                <>
+                    <UploadingHint>
+                        {uploadProgress >= 1
+                            ? `Processing ${uploadingName}…`
+                            : `Uploading ${uploadingName}…`}
+                    </UploadingHint>
+                    <ProgressRow>
+                        <ProgressTrack
+                            role="progressbar"
+                            aria-label={`Uploading ${uploadingName}`}
+                            aria-valuenow={Math.round(uploadProgress * 100)}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                        >
+                            <ProgressFill
+                                style={{ width: `${uploadProgress * 100}%` }}
+                            />
+                        </ProgressTrack>
+                        <ProgressValue>
+                            {Math.round(uploadProgress * 100)}%
+                        </ProgressValue>
+                    </ProgressRow>
+                </>
             )}
 
             {uploadError && <UploadError role="alert">{uploadError}</UploadError>}
