@@ -1,98 +1,237 @@
-# CareerMate AI 前端產品需求文件（PRD）
+# CareerMate AI — Frontend Product Requirements
 
-## 1. 專案簡介與目標
+## 1. Overview
 
-**CareerMate AI** 是以 AI 為核心的求職準備平台，協助學生與初階工程師**改履歷、練面試、規劃職涯**。
+**CareerMate AI** is an AI-first job-preparation platform that helps students
+and junior engineers **improve a resume, practise interviews, and plan a
+career**.
 
-本文件描述 **CareerMate-FE**：使用者實際看到的 React 應用。API 由 [`CareerMate-BE`](https://github.com/GeneCLee6/CareerMate-BE) 提供。
+This document covers **CareerMate-FE**: the React application users actually
+see. The API is provided by
+[`CareerMate-BE`](https://github.com/GeneCLee6/CareerMate-BE).
 
-前端的目標是**忠實呈現設計稿，並讓每一次失敗都能被理解**。這個專案的多數 bug 不是「畫錯」，而是「壞掉時使用者看不出發生什麼事」，因此錯誤處理被視為功能的一部分，不是收尾工作。
+The frontend's goal is to **render the design faithfully and make every
+failure understandable**. Most defects in this project are not "the wrong
+pixels" — they are "something broke and the user cannot tell what". Error
+handling is therefore treated as a feature, not as tidying up afterwards.
 
-## 2. 目標使用者
+## 2. Users
 
-- 求職中的學生／轉職者。
-- 桌機為主要使用情境（設計稿以 1440／1920 寬度繪製），但**手機不得不可用**——側邊欄等元件必須有對應的行動版行為。
-- 未登入者可瀏覽 Landing page；其餘畫面需登入。
+- Students and career changers who are job hunting.
+- Desktop is the primary setting (the designs are drawn at 1440 and 1920
+  wide), but **the phone must not be unusable** — components such as the
+  sidebar need a real mobile behaviour, not just `display: none`.
+- Anyone may browse the landing page; every other screen requires a session.
 
-## 3. 畫面與功能需求
+## 3. Screens
 
-設計稿來源：Zeplin 專案 `CareerMate AI`。
+Design source: the Zeplin project `CareerMate AI`.
 
-| 畫面 | 路由 | 需登入 | 狀態 |
-|---|---|---|---|
-| Landing page | `/` | ❌ | ✅ 完成 |
-| 註冊 | `/register` | ❌ | ✅ 完成 |
-| Email 驗證碼 | `/verify-email` | ❌ | ✅ 完成 |
-| 登入 | `/login` | ❌ | ✅ 完成 |
-| 忘記密碼（三步驟） | `/forgot-password` | ❌ | ⚠️ 見 §6 |
-| Onboarding | `/onboarding` | ✅ | ✅ 完成 |
-| AI 助理（首屏） | `/app` | ✅ | ✅ 完成 |
-| 個人設定 | `/settings` | ✅ | ✅ 完成 |
+| Screen | Route | Auth | Status |
+| --- | --- | --- | --- |
+| Landing page | `/` | ❌ | ✅ Done |
+| Register | `/register` | ❌ | ✅ Done |
+| Email verification code | `/verify-email` | ❌ | ✅ Done |
+| Login | `/login` | ❌ | ✅ Done |
+| Forgot password (3 steps) | `/forgot-password` | ❌ | ✅ Done |
+| Onboarding | `/onboarding` | ✅ | ✅ Done |
+| AI assistant | `/app` | ✅ | ✅ Done |
+| Personal settings | `/settings` | ✅ | ✅ Done |
 
 ### 3.1 Landing page
 
-依原始靜態網站（`CareerMateAI-Web/30`）重建的行銷頁，九個區塊加頁尾。**此頁早於 Zeplin 設計稿存在**，因此沿用自己的配色，與 auth 畫面的設計系統刻意分開（見 `RULES.md` §2）。
+A marketing page rebuilt from the original static site
+(`CareerMateAI-Web/30`): nine sections plus a footer. **It predates the Zeplin
+design**, so it keeps its own palette and is deliberately separate from the
+auth design system (see `RULES.md` §2).
 
-已登入時，navbar 的「Sign In／Start for Free」替換為帳號選單。
+When signed in, the navbar's "Sign In / Start for Free" is replaced by the
+account menu.
 
-### 3.2 註冊與登入
+### 3.2 Register, verify and sign in
 
-- 表單驗證規則**鏡射後端**（密碼至少 8 字元、含英文字母與數字）。目的是提早回饋，後端仍是唯一事實來源。
-- 需呈現設計稿的所有狀態：欄位錯誤紅框、錯誤橫幅、網路錯誤、註冊成功面板、Email 已註冊的彈窗、登入成功 toast。
-- 「Remember Me」決定 session 存在 `localStorage`（跨分頁保留）或 `sessionStorage`。
+- Form validation **mirrors the backend** (at least 8 characters, containing
+  a letter and a digit). The purpose is earlier feedback; the backend remains
+  the only source of truth.
+- Every state in the design must exist: field-level red borders, the error
+  banner, the network-error case, the success panel, the "email already
+  registered" modal, and the sign-in success toast.
+- "Remember me" decides whether the session is stored in `localStorage`
+  (kept across tabs) or `sessionStorage`.
+- Registration does not sign the user in — it hands off to `/verify-email`.
 
-### 3.3 忘記密碼
+### 3.3 Forgot password
 
-三步驟：輸入 Email → 輸入 6 位數驗證碼 → 設定新密碼 → 成功面板。
+Three steps: enter email → enter the six-digit code → set a new password →
+success panel.
 
-驗證碼輸入需支援**貼上整串自動分格**（含去除分隔符號）、退格跳回前一格、方向鍵移動。
+The code input must support **pasting the whole string** (including stripping
+separators), backspacing to the previous box, and arrow-key movement.
 
 ### 3.4 Onboarding
 
-三步驟進度軌：Welcome → Basic Information（role／field／goal）→ Finish。選項值需與後端 enum 一致（`Student`/`Other`、`FE`/`BE`）。
+A three-step progress rail: Welcome → Basic Information (role / field / goal)
+→ Finish. Option values must match the backend enums (`Student`/`Other`,
+`FE`/`BE`).
 
-### 3.5 AI 助理（首屏）
+### 3.5 AI assistant
 
-- 左側履歷欄：上傳、列表、hover 顯示刪除。**840px 以下改為抽屜**，不得直接隱藏（隱藏會讓手機完全無法管理履歷）。
-- 中央對話區：空狀態顯示問候語；有訊息時顯示對話串。
-- 送出後顯示「AI is thinking...」直到回覆抵達。
-- 失敗時：移除未被回答的那則訊息、把文字放回輸入框、顯示伺服器回傳的真實原因。
+- Left sidebar: upload, list, delete on hover. **Below 840px it becomes a
+  drawer** — it must not simply be hidden, which would make resumes
+  unmanageable on a phone.
+- Centre: a greeting when empty, the thread when not.
+- After sending, show "AI is thinking..." until the reply arrives.
+- On failure: remove the unanswered message, put the text back in the input,
+  and show the real reason the server gave.
 
-### 3.6 個人設定
+### 3.6 Settings
 
-三個分頁：Basic Info、Career & Learning、Account & Security（含變更密碼）。頭像可上傳。
+Three tabs: Basic Info, Career & Learning, Account & Security (including
+password change). The avatar can be uploaded.
 
-## 4. 非功能需求
+## 4. User stories and acceptance criteria
 
-| 項目 | 需求 |
-|---|---|
-| 錯誤可理解性 | 一律顯示伺服器的真實訊息，不用「發生錯誤」帶過。會消失的 toast 不可作為唯一的失敗提示 |
-| Session 失效 | token 失效時自動登出並導回登入頁，不可讓使用者卡在無效狀態 |
-| 上傳前驗證 | 檔案型別與大小在送出前就擋下，並說明原因，不浪費一次上傳 |
-| 行動裝置 | 不得有功能在窄螢幕下完全無法使用 |
-| 無障礙 | 錯誤訊息使用 `role="alert"`；欄位錯誤狀態綁 `aria-invalid`（視覺與輔助技術狀態不可脫鉤） |
-| 機密 | `REACT_APP_*` 會被打包進 JS，**絕不放任何真正的機密** |
+Written Given / When / Then, so each criterion reads as a test name.
 
-## 5. 明確不做的事
+### Epic A — Getting into the product
 
-- 不做 SSR／Next.js 遷移，維持 CRA。
-- 不引入 Redux 等狀態管理；`AuthContext` + 元件 state 已足夠。
-- 不做多語系。
-- 不做對話列表側欄（設計稿未包含），目前只保留最近一則對話。
-- 不追求 UI 元件的完整測試覆蓋（見 `RULES.md` §6）。
+**A1. As a visitor, I want to understand what the product does before signing
+up.**
 
-## 6. 已知缺口
+- Given I open `/`, then the page renders with no session and no request
+  requires a token.
+- Given I am signed in, when I open `/`, then the navbar shows my account
+  menu instead of the sign-up buttons.
 
-1. **忘記密碼實際上不可用**——後端會產生驗證碼但**從未寄出**，使用者收不到信。前端流程已完成，等後端寄信功能。
-2. **AI 讀不到履歷內容**，只知道檔名。
-3. Landing page 頁尾的 `Terms` / `Privacy` 為死連結（無對應頁面）。
-4. CTA 文案沿用原始靜態網站的錯字 `Start Practingcing for Free`（設計稿為 `Practicing`），經確認暫不修改。
-5. 頁尾年份為 2026，設計稿為 2025，同上暫不修改。
-6. 履歷下載未實作（後端已有端點，設計稿側欄只有刪除）。
+**A2. As a new user, I want to create an account.**
 
-## 7. 完成定義（Definition of Done）
+- Given a password that fails the rule, when I submit, then I see the reason
+  **before** a request is sent.
+- Given an email that already exists, then I see the dedicated modal from the
+  design, not a generic banner.
+- Given registration succeeds, then I am taken to the verification screen —
+  not signed in, because the backend issues no token at registration.
 
-- 設計稿的**所有狀態**都已實作（含錯誤與空狀態），不只 happy path。
-- 失敗路徑有明確行為，且使用者看得懂原因。
-- `npx tsc --noEmit`、`npm test`、`npm run build` 全數通過且無警告。
-- 動到 Landing page 時，需以快照比對證明未改變外觀（見 `RULES.md` §7）。
+**A3. As a new user, I want to enter the code from my email.**
+
+- Given I paste the whole six-digit code, then it distributes across the
+  boxes with separators stripped.
+- Given the code is wrong, then the boxes clear, are marked invalid, and the
+  server's message is shown.
+- Given the code is right, then I am signed in and continue to onboarding.
+- Given a code was just sent, then "Resend" counts down 60 seconds, matching
+  the backend cooldown.
+- Given I arrived from a refused sign-in — where no code was sent — then
+  "Resend" is available immediately.
+- Given I refresh the page, then I am returned to `/register`, because the
+  address the code went to is no longer known.
+
+**A4. As an unverified user, I want the sign-in screen to help me.**
+
+- Given the backend answers 403, then I am taken to the verification screen
+  carrying its message — not shown "invalid email or password".
+
+### Epic B — Staying signed in
+
+**B1. As a user, I want to stay signed in between visits.**
+
+- Given "Remember me" was ticked, when I return in a new tab, then I am still
+  signed in.
+- Given it was not ticked, then closing the tab ends the session.
+- Given a stored session, then it is read when the provider mounts — not when
+  the module is first imported, which made the behaviour untestable and
+  dependent on import order.
+
+**B2. As a user, I want to be told when my session ends, rather than hitting
+silent failures.**
+
+- Given the API answers 401 to a request that carried a token, then I am
+  signed out, shown a toast, and sent to `/login`.
+- Given a 401 from signing in or from submitting a wrong code, then it is
+  treated as a rejected credential, **not** an expired session — otherwise a
+  typo would look like being logged out.
+
+### Epic C — Resumes
+
+**C1. As a user, I want to upload my resume.**
+
+- Given a file that is not a PDF, or is over 10 MB, then it is rejected
+  before upload with the reason shown, so an upload attempt is not wasted.
+- Given a file whose MIME type is empty — which happens on some systems —
+  then the decision falls back to the extension rather than rejecting a valid
+  PDF.
+- Given the upload to storage is blocked by CORS, then the message says the
+  file storage could not be reached and the console carries an actionable
+  hint. The raw `TypeError: Failed to fetch` explains nothing.
+
+**C2. As a user on a phone, I want to manage my resumes.**
+
+- Given a viewport under 840px, then the sidebar is reachable as a drawer.
+
+### Epic D — Conversation
+
+**D1. As a user, I want to ask the assistant a question.**
+
+- Given I send a message, then it appears immediately, before the reply
+  arrives.
+- Given the request fails, then my pending message is removed, its text is
+  restored to the input, and the banner names the server's reason.
+- Given the server has no AI key, then the screen says so rather than failing
+  anonymously.
+
+## 5. Non-functional requirements
+
+| Area | Requirement |
+| --- | --- |
+| Error legibility | Always show the server's real message; never reduce it to "an error occurred". A toast that disappears must not be the only sign of failure |
+| Session expiry | An invalid token signs the user out and returns them to login; they are never stranded in an invalid state |
+| Validate before upload | File type and size are checked before sending, with the reason shown |
+| Mobile | No feature may be completely unreachable on a narrow screen |
+| Accessibility | Errors use `role="alert"`; invalid fields carry `aria-invalid`, so the visual state and the assistive-technology state cannot drift apart |
+| Secrets | `REACT_APP_*` values are bundled into the JavaScript. **No real secret may ever go there** |
+
+## 6. Out of scope
+
+- No SSR or Next.js migration; this stays CRA.
+- No Redux or similar — `AuthContext` plus component state is sufficient.
+- No internationalisation.
+- No conversation list sidebar (absent from the design); only the most recent
+  conversation is kept.
+- No exhaustive UI component test coverage (see `RULES.md` §6).
+
+## 7. Delivery status
+
+| Epic | Status |
+| --- | --- |
+| A — Getting into the product | ✅ Done |
+| B — Staying signed in | ✅ Done |
+| C — Resumes | ✅ Done |
+| D — Conversation | ✅ Done |
+
+### Remaining tasks, in priority order
+
+| # | Task | Why it matters | Size |
+| --- | --- | --- | --- |
+| 1 | Surface resume content once the backend can extract it | Today the assistant knows only filenames | M |
+| 2 | Resume download | The backend endpoint exists; the sidebar offers only delete | S |
+| 3 | Pages for the footer's `Terms` and `Privacy` links | They are dead links on a public page | S |
+| 4 | Conversation history sidebar | Only the most recent conversation is reachable | M |
+| 5 | Render assistant replies as Markdown | Long answers arrive as one unformatted block | S |
+
+### Accepted as-is
+
+- The CTA keeps the original static site's typo
+  `Start Practingcing for Free` (the design says `Practicing`) — confirmed,
+  not changing for now.
+- The footer year reads 2026 where the design says 2025 — same.
+
+## 8. Definition of Done
+
+- **Every state** in the design is implemented, including error and empty
+  states — not only the happy path.
+- Failure paths have defined behaviour, and the user can understand the
+  cause.
+- `npx tsc --noEmit`, `npm test` and `npm run build` all pass with no
+  warnings.
+- Any change touching the landing page is proven not to alter its appearance
+  by snapshot comparison (see `RULES.md` §7).
