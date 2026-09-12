@@ -1,10 +1,22 @@
-# CareerMate
+# CareerMate-FE
 
-The CareerMate AI marketing site, built with **React + TypeScript + styled-components**.
+CareerMate AI 的前端，以 **React + TypeScript + styled-components** 建置。
 
-It is a component-based rewrite of the original static `index.html` / `styles.css` /
-`script.js` landing page — same layout, copy and assets, now typed and split into
-reusable sections.
+包含行銷首頁、完整的註冊／登入／忘記密碼流程、新手引導、AI 助理與個人設定。
+首頁是原始靜態網站（`index.html` / `styles.css` / `script.js`）的元件化重寫，
+其餘畫面依 Zeplin 設計稿實作。
+
+## 文件
+
+| 文件 | 內容 |
+|---|---|
+| [`PRD.md`](./PRD.md) | 產品需求、畫面清單、已知缺口 |
+| [`ARCHITECTURE.md`](./ARCHITECTURE.md) | 目錄結構、資料流、session 設計 |
+| [`DESIGN.md`](./DESIGN.md) | 設計系統：字體、顏色、尺寸、狀態 |
+| [`RULES.md`](./RULES.md) | 工程規範、測試、分支／PR／CI 規範 |
+| [`DEPLOY.md`](./DEPLOY.md) | 部署平台比較與設定 |
+
+後端在 [CareerMate-BE](https://github.com/GeneCLee6/CareerMate-BE)。
 
 ## Tech stack
 
