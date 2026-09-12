@@ -1,52 +1,76 @@
 # CLAUDE.md — CareerMate-FE
 
-給 Claude Code 的專案指引。開始動工前請先讀 `RULES.md` 與 `ARCHITECTURE.md`。
+Project guidance for Claude Code. Read `RULES.md` and `ARCHITECTURE.md`
+before starting work.
 
-## 這是什麼
+## What this is
 
-CareerMate AI 的前端。React 19 + TypeScript(strict) + styled-components，Create React App。
+The frontend for CareerMate AI. React 19 + TypeScript (strict) +
+styled-components, on Create React App.
 
-後端是另一個 repo（`CareerMate-BE`）。需要後端先合併的改動，要在 PR 開頭寫明。
+The backend is a separate repository (`CareerMate-BE`). If a change needs a
+backend PR merged first, say so at the top of the PR.
 
-## 動工前必讀
+## Read first
 
-| 情境 | 先讀 |
-|---|---|
-| 照設計稿做畫面 | `DESIGN.md`（含實際量到的數值） |
-| 加 API 呼叫 | `ARCHITECTURE.md` §3、§5 |
-| 動 Landing page | **`RULES.md` §7（必須做快照比對）** |
-| 寫測試 | `RULES.md` §6 |
-| 開分支、開 PR | `RULES.md` §8–10 |
+| Situation | Read |
+| --- | --- |
+| Building a screen from the design | `DESIGN.md`, which carries the measured values |
+| Adding an API call | `ARCHITECTURE.md` §3 and §5 |
+| Touching the landing page | **`RULES.md` §7 — a snapshot comparison is required** |
+| Writing tests | `RULES.md` §6 |
+| Branching, opening a PR | `RULES.md` §8–10 |
 
-## 硬性規則
+## Hard rules
 
-1. **元件裡不得出現 `fetch()`**，一律經過 `api/*.ts`。唯一例外是直傳 S3。
-2. **不要合併 `colors` 與 `landingColors`**，兩套值是刻意不同的。
-3. **僅用於樣式的 prop 必須加 `$` 前綴**，否則會被轉發到 DOM 產生警告。
-4. **改 Landing page 必須做快照比對並在 PR 中證明差異為 0**。
-5. **`REACT_APP_*` 會進 bundle**，不得放機密。
-6. **不要直接 push `main`**。
+1. **No `fetch()` in a component.** Everything goes through `api/*.ts`. The
+   only exception is the direct upload to S3.
+2. **Do not merge `colors` and `landingColors`** — the two sets differ
+   deliberately.
+3. **A prop used only for styling takes a `$` prefix**, or it is forwarded to
+   the DOM and warns.
+4. **Changing the landing page requires a snapshot comparison**, with a zero
+   difference shown in the PR.
+5. **`REACT_APP_*` values are bundled**, so no secret may go in one.
+6. **Never push directly to `main`.**
+7. **Everything written here is in English** — code, comments, docs, commits,
+   PRs, UI copy. This is a public portfolio repository.
 
-## 常見陷阱
+## Known traps
 
-- **`getComputedStyle` 透過瀏覽器擴充讀取時可能回傳過期的值**。判斷樣式是否生效，以**截圖**為準；曾因此誤判樣式沒套用。
-- **CRA 只在啟動時讀 env**，改 `.env.local` 要重啟。
-- **`Resume` 從後端回來沒有 `id` 只有 `_id`**，已由 `api/resumes.ts` 的 `normaliseResume` 處理，不要在頁面層重複繞過。
-- **不是所有 401 都代表 session 過期**。登入失敗、現有密碼錯誤、驗證碼錯誤都會回 401，這些呼叫必須帶 `handlesUnauthorized: true`，否則使用者會被誤登出。
-- **`accept` 要同時列 media type 與副檔名**（`application/pdf,.pdf`）。只寫 media type 在 Windows 上會很慢，且部分系統 `file.type` 為空字串導致合法檔案被藏起來。
-- **圖片縮放不要混用 `height: 100%` 與 `max-width`**，會被拉變形。見 `DESIGN.md` §5。
+- **`getComputedStyle` read through a browser extension can return stale
+  values.** Judge whether a style applied by taking a **screenshot**; a stale
+  read once led to the wrong conclusion that a style had not applied.
+- **CRA reads env only at start-up.** Restart after editing `.env.local`.
+- **`Resume` arrives from the backend with `_id` and no `id`.**
+  `normaliseResume` in `api/resumes.ts` handles it — do not work around it
+  again at the page level.
+- **Not every 401 means the session expired.** A failed sign-in, a wrong
+  current password and a wrong code all return 401. Those calls must pass
+  `handlesUnauthorized: true`, or the user is wrongly signed out.
+- **`accept` must list both a media type and an extension**
+  (`application/pdf,.pdf`). Media type alone is slow on Windows, and some
+  systems report an empty `file.type`, which hides valid files.
+- **Do not mix `height: 100%` with `max-width` when scaling an image** — it
+  distorts. See `DESIGN.md` §5.
+- **A test that renders a route needs the `react-router-dom` mapping in
+  `package.json` and the `TextEncoder` polyfill in `setupTests.ts`.** Both are
+  already there; removing either breaks every routed test at import time.
 
-## 開發指令
+## Commands
 
 ```bash
 npm start                    # :3000
-npx tsc --noEmit             # 型別
-CI=true npm test             # 測試（單次）
-CI=false npm run build       # 建置（本機容忍警告）
+npx tsc --noEmit             # types
+CI=true npm test             # tests, single run
+CI=false npm run build       # build, tolerating warnings locally
 ```
 
-指向本機後端時：`REACT_APP_API_BASE_URL=http://localhost:3000/v1 npm start`
+Against a local backend:
+`REACT_APP_API_BASE_URL=http://localhost:3000/v1 npm start`
 
-## 目前的已知缺口
+## Current gaps
 
-見 `PRD.md` §6。最擋路的是**忘記密碼實際不可用**——前端流程完整，但後端從未把驗證碼寄出。
+See `PRD.md` §7. The most limiting one is that **the assistant cannot see
+resume content** — the backend passes only filenames, so the advice is
+necessarily generic until PDF text extraction lands.

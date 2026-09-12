@@ -1,22 +1,26 @@
 # CareerMate-FE
 
-CareerMate AI 的前端，以 **React + TypeScript + styled-components** 建置。
+The frontend for CareerMate AI, built with **React + TypeScript +
+styled-components**.
 
-包含行銷首頁、完整的註冊／登入／忘記密碼流程、新手引導、AI 助理與個人設定。
-首頁是原始靜態網站（`index.html` / `styles.css` / `script.js`）的元件化重寫，
-其餘畫面依 Zeplin 設計稿實作。
+It contains the marketing landing page, the full register / verify / sign-in /
+password-recovery flow, first-run onboarding, the AI assistant, and personal
+settings. The landing page is a component-by-component rewrite of the original
+static site (`index.html` / `styles.css` / `script.js`); every other screen is
+built from the Zeplin design.
 
-## 文件
+## Documentation
 
-| 文件 | 內容 |
-|---|---|
-| [`PRD.md`](./PRD.md) | 產品需求、畫面清單、已知缺口 |
-| [`ARCHITECTURE.md`](./ARCHITECTURE.md) | 目錄結構、資料流、session 設計 |
-| [`DESIGN.md`](./DESIGN.md) | 設計系統：字體、顏色、尺寸、狀態 |
-| [`RULES.md`](./RULES.md) | 工程規範、測試、分支／PR／CI 規範 |
-| [`DEPLOY.md`](./DEPLOY.md) | 部署平台比較與設定 |
+| Document | Contents |
+| --- | --- |
+| [`PRD.md`](./PRD.md) | Product requirements, user stories, acceptance criteria, known gaps |
+| [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Directory structure, data flow, session design |
+| [`DESIGN.md`](./DESIGN.md) | Design system: type, colour, sizing, states |
+| [`RULES.md`](./RULES.md) | Engineering conventions, testing, branch/PR/CI rules |
+| [`DEPLOY.md`](./DEPLOY.md) | Hosting comparison and configuration |
 
-後端在 [CareerMate-BE](https://github.com/GeneCLee6/CareerMate-BE)。
+The backend lives in
+[CareerMate-BE](https://github.com/GeneCLee6/CareerMate-BE).
 
 ## Tech stack
 
