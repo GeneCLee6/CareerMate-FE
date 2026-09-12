@@ -9,6 +9,7 @@ class FakeRecognition {
     lang = "";
     continuous = false;
     interimResults = false;
+    maxAlternatives = 0;
     stopped = false;
     aborted = false;
 
@@ -30,7 +31,7 @@ class FakeRecognition {
         this.aborted = true;
     }
 
-    /** Delivers a final transcript the way the browser would. */
+    /** Delivers a transcript the way the browser would. */
     say(transcript: string, isFinal = true) {
         const result = Object.assign([{ transcript }], { isFinal });
         this.onresult?.({ resultIndex: 0, results: [result] });
@@ -104,14 +105,39 @@ describe("dictation", () => {
         expect(onTranscript).not.toHaveBeenCalled();
     });
 
-    it("asks for one finalised utterance, not a running commentary", () => {
-        // Interim results would rewrite the input on every syllable while the
-        // user watches.
+    it("keeps listening and shows words as they are heard", () => {
+        // Both were originally off. Ending after one phrase meant a pause for
+        // breath cut the sentence off, and hiding interim results meant
+        // speaking into silence — together they made a working feature feel
+        // broken.
         const { result } = renderHook(() => useSpeechRecognition(jest.fn()));
         act(() => result.current.start());
 
-        expect(FakeRecognition.last!.interimResults).toBe(false);
-        expect(FakeRecognition.last!.continuous).toBe(false);
+        expect(FakeRecognition.last!.continuous).toBe(true);
+        expect(FakeRecognition.last!.interimResults).toBe(true);
+    });
+
+    it("exposes interim words without committing them", () => {
+        const onTranscript = jest.fn();
+        const { result } = renderHook(() => useSpeechRecognition(onTranscript));
+
+        act(() => result.current.start());
+        act(() => FakeRecognition.last!.say("how do I improve my", false));
+
+        expect(result.current.interim).toBe("how do I improve my");
+        expect(onTranscript).not.toHaveBeenCalled();
+    });
+
+    it("clears the interim text once the phrase is finalised", () => {
+        const onTranscript = jest.fn();
+        const { result } = renderHook(() => useSpeechRecognition(onTranscript));
+
+        act(() => result.current.start());
+        act(() => FakeRecognition.last!.say("how do I improve my", false));
+        act(() => FakeRecognition.last!.say("how do I improve my resume"));
+
+        expect(onTranscript).toHaveBeenCalledWith("how do I improve my resume");
+        expect(result.current.interim).toBe("");
     });
 
     it("tracks whether it is listening", () => {
@@ -179,5 +205,55 @@ describe("cleanup", () => {
         unmount();
 
         expect(recognition.aborted).toBe(true);
+    });
+});
+
+describe("language", () => {
+    it("tells the engine which language to expect", () => {
+        // Recognition is not multilingual. Speaking Mandarin to an engine set
+        // to English does not give poor Chinese, it gives confident nonsense —
+        // which is what made the feature feel inaccurate.
+        const { result } = renderHook(() => useSpeechRecognition(jest.fn()));
+
+        act(() => result.current.setLanguage("zh-TW"));
+        act(() => result.current.start());
+
+        expect(FakeRecognition.last!.lang).toBe("zh-TW");
+    });
+
+    it("remembers the choice for next time", () => {
+        const { result, unmount } = renderHook(() =>
+            useSpeechRecognition(jest.fn())
+        );
+        act(() => result.current.setLanguage("zh-CN"));
+        unmount();
+
+        const { result: again } = renderHook(() =>
+            useSpeechRecognition(jest.fn())
+        );
+        expect(again.current.language).toBe("zh-CN");
+    });
+
+    it("falls back to an offered language when storage is unreadable", () => {
+        // A browser set to block site data throws on access.
+        const getItem = jest
+            .spyOn(Storage.prototype, "getItem")
+            .mockImplementation(() => {
+                throw new Error("blocked");
+            });
+
+        const { result } = renderHook(() => useSpeechRecognition(jest.fn()));
+        expect(result.current.language).toBeTruthy();
+
+        getItem.mockRestore();
+    });
+
+    it("ignores a stored value that is no longer offered", () => {
+        window.localStorage.setItem("careermate.dictationLanguage", "kl-GL");
+        const { result } = renderHook(() => useSpeechRecognition(jest.fn()));
+
+        expect(
+            ["en-AU", "zh-TW", "zh-CN"].includes(result.current.language)
+        ).toBe(true);
     });
 });
