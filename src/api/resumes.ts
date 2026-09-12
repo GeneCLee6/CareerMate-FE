@@ -1,4 +1,5 @@
-import { ApiError, apiClient, SuccessData } from "./client";
+import { putWithProgress } from "./upload";
+import { apiClient, SuccessData } from "./client";
 
 export interface Resume {
     id: string;
@@ -50,40 +51,16 @@ function getPresignedUrl(
  */
 export async function uploadFile(
     file: File,
-    category: UploadCategory
+    category: UploadCategory,
+    onProgress?: (fraction: number) => void
 ): Promise<string> {
     const { uploadUrl, fileKey } = await getPresignedUrl(file, category);
 
-    let response: Response;
-    try {
-        response = await fetch(uploadUrl, {
-            method: "PUT",
-            headers: { "Content-Type": file.type },
-            body: file,
-        });
-    } catch {
-        // The browser reports a blocked cross-origin request and a genuinely
-        // unreachable host identically, as an opaque TypeError. Reaching here
-        // after the API happily issued the URL nearly always means the storage
-        // bucket has no CORS rule for this origin, so say where to look.
-        console.error(
-            "Upload to storage failed before it got a response. The API issued " +
-                "the upload URL, so the bucket most likely has no CORS rule " +
-                `allowing PUT from ${window.location.origin}.`
-        );
-        throw new ApiError(
-            "Could not reach file storage. Please try again.",
-            0,
-            true
-        );
-    }
-
-    if (!response.ok) {
-        throw new ApiError("Upload failed. Please try again.", response.status);
-    }
+    await putWithProgress(uploadUrl, file, onProgress);
 
     return fileKey;
 }
+
 
 export function createResume(
     fileKey: string,
@@ -111,7 +88,10 @@ export function getResumeDownloadUrl(id: string): Promise<string> {
 }
 
 /** Uploads the file and registers it as the user's resume in one step. */
-export async function uploadResume(file: File): Promise<Resume> {
-    const fileKey = await uploadFile(file, "resume");
+export async function uploadResume(
+    file: File,
+    onProgress?: (fraction: number) => void
+): Promise<Resume> {
+    const fileKey = await uploadFile(file, "resume", onProgress);
     return createResume(fileKey, file.name);
 }
