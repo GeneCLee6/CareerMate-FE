@@ -1,4 +1,5 @@
 import { ChangeEvent, useRef } from "react";
+import { Link } from "react-router-dom";
 import styled from "styled-components";
 import Avatar from "../../components/Avatar";
 import { Resume } from "../../api/resumes";
@@ -72,11 +73,23 @@ const CloseButton = styled.button`
     }
 `;
 
-const Logo = styled.div`
+/**
+ * A link, not a decoration. It is the only branding on the assistant screen,
+ * and people expect a logo in the top-left corner to take them home — leaving
+ * it inert means there is no way back to the landing page at all.
+ */
+const Logo = styled(Link)`
     display: flex;
     align-items: center;
     gap: 8px;
     margin-bottom: 36px;
+    text-decoration: none;
+    border-radius: 6px;
+
+    &:focus-visible {
+        outline: 2px solid ${colors.borderFocus};
+        outline-offset: 4px;
+    }
 `;
 
 const LogoIcon = styled.img`
@@ -425,7 +438,7 @@ const ResumeSidebar = ({
                 >
                     <CloseIcon />
                 </CloseButton>
-                <Logo>
+                <Logo to="/" aria-label="CareerMate AI home">
                 <LogoIcon src={logoIcon} alt="" />
                 <LogoText src={logoText} alt="CareerMate AI" />
             </Logo>
