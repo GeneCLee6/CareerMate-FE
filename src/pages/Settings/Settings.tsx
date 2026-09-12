@@ -10,6 +10,7 @@ import { updateAvatar } from "../../api/users";
 import BasicInfoPanel from "./BasicInfoPanel";
 import CareerPanel from "./CareerPanel";
 import SecurityPanel from "./SecurityPanel";
+import ChatHistoryPanel from "./ChatHistoryPanel";
 import { FIELD_OPTIONS } from "../Onboarding/options";
 import { colors, fontFamily } from "../../styles/tokens";
 import { AVATAR_ACCEPT, validateAvatarFile } from "../../utils/fileValidation";
@@ -373,6 +374,10 @@ const Settings = () => {
                         })}
                     </Tabs>
                     <ActivePanel />
+                    {/* Data deletion belongs where people look for it,
+                        and a fourth tab would change a designed screen
+                        for the sake of one control. */}
+                    {tab === "security" && <ChatHistoryPanel />}
                 </Body>
             </Content>
         </Page>
