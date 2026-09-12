@@ -11,6 +11,12 @@ import {
     getResumes,
     uploadResume,
 } from "../../api/resumes";
+import {
+    ChatMessage as ApiChatMessage,
+    getConversations,
+    getMessages,
+    sendMessage as sendChatMessage,
+} from "../../api/chat";
 import ResumeSidebar from "./ResumeSidebar";
 import { colors, fontFamily } from "../../styles/tokens";
 import { validateResumeFile } from "../../utils/fileValidation";
@@ -139,6 +145,16 @@ const Bubble = styled.div`
     background-color: #eef0f5;
     border-radius: 12px;
     white-space: pre-wrap;
+`;
+
+/** Kept above the composer so a failed send stays readable while retrying. */
+const ChatError = styled.p`
+    margin: 0 0 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: ${colors.danger};
+    background-color: ${colors.dangerSurface};
+    border-radius: 10px;
 `;
 
 const Composer = styled.form`
@@ -280,12 +296,6 @@ const SparkIcon = () => (
     </svg>
 );
 
-interface ChatMessage {
-    id: string;
-    author: "you" | "ai";
-    text: string;
-}
-
 const Chat = () => {
     const { user } = useAuth();
     const showToast = useToast();
@@ -294,7 +304,10 @@ const Chat = () => {
     const [uploading, setUploading] = useState(false);
     const [uploadingName, setUploadingName] = useState<string | null>(null);
     const [uploadError, setUploadError] = useState<string | null>(null);
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [messages, setMessages] = useState<ApiChatMessage[]>([]);
+    const [conversationId, setConversationId] = useState<string | null>(null);
+    const [sending, setSending] = useState(false);
+    const [chatError, setChatError] = useState<string | null>(null);
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [draft, setDraft] = useState("");
     const threadRef = useRef<HTMLDivElement>(null);
@@ -307,6 +320,26 @@ const Chat = () => {
             })
             .catch(() => {
                 // An empty list is a reasonable fallback for the sidebar.
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+        // Resume the most recent conversation so a refresh doesn't lose it.
+        getConversations()
+            .then((conversations) => {
+                const latest = conversations[0];
+                if (cancelled || !latest) return;
+                setConversationId(latest.id);
+                return getMessages(latest.id).then((history) => {
+                    if (!cancelled) setMessages(history);
+                });
+            })
+            .catch(() => {
+                // An empty thread is a fine starting point.
             });
         return () => {
             cancelled = true;
@@ -371,23 +404,53 @@ const Chat = () => {
         [resumes, showToast]
     );
 
-    function handleSend(e: FormEvent<HTMLFormElement>) {
+    async function handleSend(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
         const text = draft.trim();
-        if (!text) return;
+        if (!text || sending) return;
 
         setDraft("");
+        setChatError(null);
+        setSending(true);
+
+        // Show the user's turn straight away; reconcile with the server after.
+        const pendingId = `pending-${Date.now()}`;
         setMessages((prev) => [
             ...prev,
-            { id: `${Date.now()}-you`, author: "you", text },
             {
-                id: `${Date.now()}-ai`,
-                author: "ai",
-                // The backend has no chat endpoint yet, so the assistant side is
-                // a placeholder until one exists.
-                text: "AI is thinking...",
+                id: pendingId,
+                conversation: conversationId ?? "",
+                role: "user",
+                content: text,
+                createdAt: new Date().toISOString(),
             },
         ]);
+
+        try {
+            const result = await sendChatMessage(
+                text,
+                conversationId ?? undefined
+            );
+            setConversationId(result.conversation.id);
+            setMessages((prev) => [
+                ...prev.filter((message) => message.id !== pendingId),
+                result.userMessage,
+                result.assistantMessage,
+            ]);
+        } catch (err) {
+            // Take the unanswered turn back out and let them retry it.
+            setMessages((prev) =>
+                prev.filter((message) => message.id !== pendingId)
+            );
+            setDraft(text);
+            setChatError(
+                err instanceof ApiError
+                    ? err.message
+                    : "Could not send that message. Please try again."
+            );
+        } finally {
+            setSending(false);
+        }
     }
 
     if (!user) return null;
@@ -434,7 +497,7 @@ const Chat = () => {
                         <ThreadInner>
                             {messages.map((message) => (
                                 <Message key={message.id}>
-                                    {message.author === "you" ? (
+                                    {message.role === "user" ? (
                                         <Avatar
                                             name={user.fullName}
                                             src={user.avatarUrl}
@@ -450,19 +513,31 @@ const Chat = () => {
                                     )}
                                     <MessageBody>
                                         <Author>
-                                            {message.author === "you"
+                                            {message.role === "user"
                                                 ? "You"
                                                 : "CareerMate AI"}
                                         </Author>
-                                        <Bubble>{message.text}</Bubble>
+                                        <Bubble>{message.content}</Bubble>
                                     </MessageBody>
                                 </Message>
                             ))}
+                            {sending && (
+                                <Message>
+                                    <AiAvatar>
+                                        <AiAvatarIcon src={logoIcon} alt="" />
+                                    </AiAvatar>
+                                    <MessageBody>
+                                        <Author>CareerMate AI</Author>
+                                        <Bubble>AI is thinking...</Bubble>
+                                    </MessageBody>
+                                </Message>
+                            )}
                         </ThreadInner>
                     )}
                 </Thread>
 
                 <Composer onSubmit={handleSend}>
+                    {chatError && <ChatError role="alert">{chatError}</ChatError>}
                     <ComposerBox>
                         <Input
                             value={draft}
@@ -487,7 +562,7 @@ const Chat = () => {
                                 </RoundButton>
                                 <SendButton
                                     type="submit"
-                                    disabled={!draft.trim()}
+                                    disabled={!draft.trim() || sending}
                                     aria-label="Send message"
                                 >
                                     <SparkIcon />
