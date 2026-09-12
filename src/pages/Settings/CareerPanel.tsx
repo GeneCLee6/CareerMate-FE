@@ -13,6 +13,8 @@ import {
     SaveButton,
     settingsInputRadius,
 } from "./settingsStyles";
+import { validateGoal } from "../../utils/validators";
+import { LIMITS } from "../../utils/limits";
 
 const CareerPanel = () => {
     const { user, updateUser } = useAuth();
@@ -26,6 +28,13 @@ const CareerPanel = () => {
 
     async function handleSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
+
+        const goalError = validateGoal(goal);
+        if (goalError) {
+            setBanner(goalError);
+            return;
+        }
+
         setBanner(null);
         setSaving(true);
 
@@ -79,6 +88,7 @@ const CareerPanel = () => {
                     label="Your Goal"
                     placeholder="What are you working towards?"
                     radius={settingsInputRadius}
+                    maxLength={LIMITS.GOAL}
                     value={goal}
                     onChange={(e) => setGoal(e.target.value)}
                 />

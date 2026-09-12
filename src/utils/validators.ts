@@ -1,3 +1,5 @@
+import { LIMITS } from "./limits";
+
 /**
  * Client-side mirrors of the backend's zod auth schemas
  * (CareerMate-BE/src/auth/auth.validation.js). Keeping them in step means the
@@ -17,6 +19,9 @@ export function validateEmail(email: string): string | null {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
         return "Invalid email format.";
     }
+    if (value.length > LIMITS.EMAIL) {
+        return "Email address is too long.";
+    }
     return null;
 }
 
@@ -35,8 +40,28 @@ export function validatePassword(password: string): string | null {
 }
 
 export function validateFullName(fullName: string): string | null {
-    if (!fullName.trim()) {
+    const value = fullName.trim();
+    if (!value) {
         return "Full name is required.";
+    }
+    if (value.length > LIMITS.FULL_NAME) {
+        return `Full name must be ${LIMITS.FULL_NAME} characters or fewer.`;
+    }
+    return null;
+}
+
+/** Optional, so only the length is checked. */
+export function validateDisplayName(displayName: string): string | null {
+    if (displayName.trim().length > LIMITS.DISPLAY_NAME) {
+        return `Display name must be ${LIMITS.DISPLAY_NAME} characters or fewer.`;
+    }
+    return null;
+}
+
+/** Optional, and also the length of this field in the AI system prompt. */
+export function validateGoal(goal: string): string | null {
+    if (goal.trim().length > LIMITS.GOAL) {
+        return `Goal must be ${LIMITS.GOAL} characters or fewer.`;
     }
     return null;
 }

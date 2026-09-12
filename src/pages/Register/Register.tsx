@@ -16,6 +16,7 @@ import {
     RegisterFormValues,
     validateRegisterForm,
 } from "../../utils/validators";
+import { LIMITS } from "../../utils/limits";
 import { colors, gradient } from "../../styles/tokens";
 
 const Title = styled.h1`
@@ -189,6 +190,7 @@ const Register = () => {
                     label="Full Name"
                     placeholder="Your full name"
                     autoComplete="name"
+                    maxLength={LIMITS.FULL_NAME}
                     value={values.fullName}
                     invalid={Boolean(errors.fullName)}
                     onChange={(e) => setValue("fullName", e.target.value)}
@@ -200,6 +202,7 @@ const Register = () => {
                     label="Email"
                     placeholder="Your email"
                     autoComplete="email"
+                    maxLength={LIMITS.EMAIL}
                     value={values.email}
                     invalid={Boolean(errors.email)}
                     onChange={(e) => setValue("email", e.target.value)}
