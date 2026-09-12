@@ -1,12 +1,15 @@
 import {
     PASSWORD_RULE_MESSAGE,
     maskEmail,
+    validateDisplayName,
     validateEmail,
     validateFullName,
+    validateGoal,
     validateLoginForm,
     validatePassword,
     validateRegisterForm,
 } from "./validators";
+import { LIMITS } from "./limits";
 
 describe("validateEmail", () => {
     it("accepts an ordinary address", () => {
@@ -123,5 +126,67 @@ describe("maskEmail", () => {
 
     it("returns the input unchanged when there is no domain", () => {
         expect(maskEmail("not-an-email")).toBe("not-an-email");
+    });
+});
+
+describe("length limits mirror the backend", () => {
+    // The backend enforces these; the frontend repeats them so the user is
+    // told while typing instead of by a 400 after pressing submit.
+    it("accepts a full name at exactly the limit", () => {
+        expect(validateFullName("x".repeat(LIMITS.FULL_NAME))).toBeNull();
+    });
+
+    it("rejects a full name one character over", () => {
+        expect(validateFullName("x".repeat(LIMITS.FULL_NAME + 1))).toBe(
+            `Full name must be ${LIMITS.FULL_NAME} characters or fewer.`
+        );
+    });
+
+    it("measures after trimming, as the backend does", () => {
+        const padded = "  " + "x".repeat(LIMITS.FULL_NAME) + "  ";
+        expect(validateFullName(padded)).toBeNull();
+    });
+
+    it("rejects an over-long email", () => {
+        const local = "a".repeat(LIMITS.EMAIL);
+        expect(validateEmail(`${local}@example.com`)).toBe(
+            "Email address is too long."
+        );
+    });
+
+    it("still reports a malformed email before its length", () => {
+        // Format first: "too long" is unhelpful when the value is not an
+        // address at all.
+        expect(validateEmail("x".repeat(LIMITS.EMAIL + 10))).toBe(
+            "Invalid email format."
+        );
+    });
+
+    describe("display name", () => {
+        it("allows an empty value, since the field is optional", () => {
+            expect(validateDisplayName("")).toBeNull();
+        });
+
+        it("rejects one that is too long", () => {
+            expect(
+                validateDisplayName("x".repeat(LIMITS.DISPLAY_NAME + 1))
+            ).toBe(
+                `Display name must be ${LIMITS.DISPLAY_NAME} characters or fewer.`
+            );
+        });
+    });
+
+    describe("goal", () => {
+        it("allows an empty value", () => {
+            expect(validateGoal("")).toBeNull();
+        });
+
+        it("rejects one past the limit", () => {
+            // This field is interpolated into the AI system prompt, so its
+            // length is paid for on every turn of every conversation.
+            expect(validateGoal("x".repeat(LIMITS.GOAL + 1))).toBe(
+                `Goal must be ${LIMITS.GOAL} characters or fewer.`
+            );
+        });
     });
 });

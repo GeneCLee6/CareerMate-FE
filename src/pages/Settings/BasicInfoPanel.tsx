@@ -5,7 +5,11 @@ import { useToast } from "../../components/Toast";
 import { useAuth } from "../../context/AuthContext";
 import { ApiError } from "../../api/client";
 import { updateProfile } from "../../api/users";
-import { validateFullName } from "../../utils/validators";
+import {
+    validateDisplayName,
+    validateFullName,
+} from "../../utils/validators";
+import { LIMITS } from "../../utils/limits";
 import {
     PanelForm,
     PanelTitle,
@@ -25,7 +29,8 @@ const BasicInfoPanel = () => {
     async function handleSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
 
-        const nameError = validateFullName(fullName);
+        const nameError =
+            validateFullName(fullName) ?? validateDisplayName(displayName);
         if (nameError) {
             setBanner(nameError);
             return;
@@ -70,6 +75,7 @@ const BasicInfoPanel = () => {
                     name="fullName"
                     label="Full Name"
                     radius={settingsInputRadius}
+                    maxLength={LIMITS.FULL_NAME}
                     value={fullName}
                     invalid={Boolean(banner)}
                     onChange={(e) => setFullName(e.target.value)}
@@ -80,6 +86,7 @@ const BasicInfoPanel = () => {
                     label="Display Name (Optional)"
                     placeholder="How your name appears in the app"
                     radius={settingsInputRadius}
+                    maxLength={LIMITS.DISPLAY_NAME}
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                 />
