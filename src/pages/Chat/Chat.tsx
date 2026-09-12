@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import UserMenu from "../../components/UserMenu";
 import Avatar from "../../components/Avatar";
@@ -18,8 +18,17 @@ import {
     sendMessage as sendChatMessage,
 } from "../../api/chat";
 import ResumeSidebar from "./ResumeSidebar";
-import { colors, fontFamily } from "../../styles/tokens";
+import { colors, fontFamily, gradient } from "../../styles/tokens";
 import { validateResumeFile } from "../../utils/fileValidation";
+import {
+    ATTACHMENT_ACCEPT,
+    MAX_ATTACHMENTS,
+    PendingAttachment,
+    mediaTypeOf,
+    toBase64,
+    validateAttachment,
+} from "../../utils/attachments";
+import { useSpeechRecognition } from "../../hooks/useSpeechRecognition";
 import logoIcon from "../../assets/logo-icon.png";
 
 const Page = styled.div`
@@ -196,13 +205,98 @@ const Input = styled.textarea`
     }
 `;
 
+const AttachmentRow = styled.ul`
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 10px;
+    padding: 0;
+    list-style: none;
+`;
+
+const AttachmentChip = styled.li`
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 220px;
+    padding: 6px 8px 6px 6px;
+    font-size: 12px;
+    color: ${colors.text};
+    background-color: #f4f4f8;
+    border: 1px solid ${colors.border};
+    border-radius: 10px;
+`;
+
+const ChipThumb = styled.img`
+    width: 28px;
+    height: 28px;
+    object-fit: cover;
+    border-radius: 6px;
+    display: block;
+`;
+
+/** Stands in for a document, which has no thumbnail to show. */
+const ChipBadge = styled.span`
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    color: #fff;
+    background: ${gradient};
+    border-radius: 6px;
+`;
+
+const ChipName = styled.span`
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+`;
+
+const ChipRemove = styled.button`
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    font-size: 14px;
+    line-height: 1;
+    color: ${colors.label};
+    background: none;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+
+    &:hover {
+        color: ${colors.text};
+        background-color: #e6e6ec;
+    }
+`;
+
+const ListeningDot = styled.span`
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 7px;
+    height: 7px;
+    background-color: ${colors.danger};
+    border-radius: 50%;
+`;
+
 const ComposerActions = styled.div`
     display: flex;
     align-items: center;
     justify-content: space-between;
 `;
 
+const HiddenInput = styled.input`
+    display: none;
+`;
+
 const RoundButton = styled.button`
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -311,6 +405,14 @@ const Chat = () => {
     const [chatError, setChatError] = useState<string | null>(null);
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [draft, setDraft] = useState("");
+    const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
+    const attachInputRef = useRef<HTMLInputElement>(null);
+
+    // Dictation fills the input rather than sending: recognition mishears,
+    // and sending automatically would send the mistakes too.
+    const speech = useSpeechRecognition((text) => {
+        setDraft((prev) => (prev ? `${prev} ${text}` : text));
+    });
     const threadRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -407,12 +509,59 @@ const Chat = () => {
         [resumes, showToast]
     );
 
+    function handleAttach(event: ChangeEvent<HTMLInputElement>) {
+        const picked: File[] = Array.from(event.target.files ?? []);
+        // Reset immediately so picking the same file twice still fires change.
+        event.target.value = "";
+        if (picked.length === 0) return;
+
+        setChatError(null);
+
+        if (attachments.length + picked.length > MAX_ATTACHMENTS) {
+            setChatError(`You can attach up to ${MAX_ATTACHMENTS} files at once.`);
+            return;
+        }
+
+        const accepted: PendingAttachment[] = [];
+        for (const file of picked) {
+            const problem = validateAttachment(file);
+            if (problem) {
+                setChatError(problem);
+                continue;
+            }
+            const mediaType = mediaTypeOf(file);
+            const isImage = mediaType.startsWith("image/");
+            accepted.push({
+                id: `${file.name}-${file.lastModified}-${file.size}`,
+                file,
+                fileName: file.name,
+                mediaType,
+                kind: isImage ? "image" : "document",
+                previewUrl: isImage ? URL.createObjectURL(file) : undefined,
+            });
+        }
+        setAttachments((prev) => [...prev, ...accepted]);
+    }
+
+    function removeAttachment(id: string) {
+        setAttachments((prev) => {
+            const going = prev.find((a) => a.id === id);
+            // Object URLs are held by the browser until revoked.
+            if (going?.previewUrl) URL.revokeObjectURL(going.previewUrl);
+            return prev.filter((a) => a.id !== id);
+        });
+    }
+
     async function handleSend(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
         const text = draft.trim();
-        if (!text || sending) return;
+        // A file on its own is a complete message: dropping in a screenshot
+        // and asking nothing is a reasonable way to start.
+        if ((!text && attachments.length === 0) || sending) return;
 
+        const sendingAttachments = attachments;
         setDraft("");
+        setAttachments([]);
         setChatError(null);
         setSending(true);
 
@@ -425,15 +574,36 @@ const Chat = () => {
                 conversation: conversationId ?? "",
                 role: "user",
                 content: text,
+                attachments: sendingAttachments.map(
+                    ({ fileName, mediaType, kind }) => ({
+                        fileName,
+                        mediaType,
+                        kind,
+                    })
+                ),
                 createdAt: new Date().toISOString(),
             },
         ]);
 
         try {
+            const encoded = await Promise.all(
+                sendingAttachments.map(async (attachment) => ({
+                    fileName: attachment.fileName,
+                    mediaType: attachment.mediaType,
+                    data: await toBase64(attachment.file),
+                }))
+            );
+
             const result = await sendChatMessage(
                 text,
-                conversationId ?? undefined
+                conversationId ?? undefined,
+                encoded
             );
+
+            // The bytes are on their way; the previews are no longer needed.
+            sendingAttachments.forEach((a) => {
+                if (a.previewUrl) URL.revokeObjectURL(a.previewUrl);
+            });
             setConversationId(result.conversation.id);
             setMessages((prev) => [
                 ...prev.filter((message) => message.id !== pendingId),
@@ -446,6 +616,8 @@ const Chat = () => {
                 prev.filter((message) => message.id !== pendingId)
             );
             setDraft(text);
+            // Give the files back too, so a retry is one click.
+            setAttachments(sendingAttachments);
             setChatError(
                 err instanceof ApiError
                     ? err.message
@@ -543,6 +715,36 @@ const Chat = () => {
                 <Composer onSubmit={handleSend}>
                     {chatError && <ChatError role="alert">{chatError}</ChatError>}
                     <ComposerBox>
+                        {attachments.length > 0 && (
+                            <AttachmentRow>
+                                {attachments.map((attachment) => (
+                                    <AttachmentChip key={attachment.id}>
+                                        {attachment.previewUrl ? (
+                                            <ChipThumb
+                                                src={attachment.previewUrl}
+                                                alt=""
+                                            />
+                                        ) : (
+                                            <ChipBadge aria-hidden="true">
+                                                PDF
+                                            </ChipBadge>
+                                        )}
+                                        <ChipName title={attachment.fileName}>
+                                            {attachment.fileName}
+                                        </ChipName>
+                                        <ChipRemove
+                                            type="button"
+                                            onClick={() =>
+                                                removeAttachment(attachment.id)
+                                            }
+                                            aria-label={`Remove ${attachment.fileName}`}
+                                        >
+                                            ×
+                                        </ChipRemove>
+                                    </AttachmentChip>
+                                ))}
+                            </AttachmentRow>
+                        )}
                         <Input
                             value={draft}
                             onChange={(e) => setDraft(e.target.value)}
@@ -557,16 +759,50 @@ const Chat = () => {
                             aria-label="Message CareerMate AI"
                         />
                         <ComposerActions>
-                            <RoundButton type="button" aria-label="Add attachment">
+                            <HiddenInput
+                                ref={attachInputRef}
+                                type="file"
+                                accept={ATTACHMENT_ACCEPT}
+                                multiple
+                                onChange={handleAttach}
+                            />
+                            <RoundButton
+                                type="button"
+                                onClick={() => attachInputRef.current?.click()}
+                                disabled={attachments.length >= MAX_ATTACHMENTS}
+                                aria-label="Add attachment"
+                            >
                                 <PlusIcon />
                             </RoundButton>
                             <RightActions>
-                                <RoundButton type="button" aria-label="Voice input">
-                                    <MicIcon />
-                                </RoundButton>
+                                {speech.supported && (
+                                    <RoundButton
+                                        type="button"
+                                        onClick={
+                                            speech.listening
+                                                ? speech.stop
+                                                : speech.start
+                                        }
+                                        aria-label={
+                                            speech.listening
+                                                ? "Stop dictating"
+                                                : "Dictate a message"
+                                        }
+                                        aria-pressed={speech.listening}
+                                    >
+                                        <MicIcon />
+                                        {speech.listening && (
+                                            <ListeningDot aria-hidden="true" />
+                                        )}
+                                    </RoundButton>
+                                )}
                                 <SendButton
                                     type="submit"
-                                    disabled={!draft.trim() || sending}
+                                    disabled={
+                                        (!draft.trim() &&
+                                            attachments.length === 0) ||
+                                        sending
+                                    }
                                     aria-label="Send message"
                                 >
                                     <SparkIcon />

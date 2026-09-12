@@ -2,11 +2,19 @@ import { apiClient, SuccessData } from "./client";
 
 export type ChatRole = "user" | "assistant";
 
+export interface MessageAttachment {
+    fileName: string;
+    mediaType: string;
+    kind: "image" | "document";
+}
+
 export interface ChatMessage {
     id: string;
     conversation: string;
     role: ChatRole;
     content: string;
+    /** What was attached. The files themselves are not retained. */
+    attachments?: MessageAttachment[];
     createdAt: string;
 }
 
@@ -48,16 +56,29 @@ export function getMessages(conversationId: string): Promise<ChatMessage[]> {
  * Sends a message and returns both turns. Omit `conversationId` to start a new
  * conversation — the server creates one from the first message.
  */
+/** Base64 payload, as the API takes it. */
+export interface OutgoingAttachment {
+    fileName: string;
+    mediaType: string;
+    data: string;
+}
+
 export function sendMessage(
     content: string,
-    conversationId?: string
+    conversationId?: string,
+    attachments?: OutgoingAttachment[]
 ): Promise<SendMessageResult> {
     const path = conversationId
         ? `/chat/conversations/${conversationId}/messages`
         : "/chat/messages";
 
     return apiClient
-        .post<SuccessData<SendMessageResult>>(path, { content })
+        .post<SuccessData<SendMessageResult>>(path, {
+            content,
+            // Omitted rather than sent empty, so an ordinary message keeps the
+            // request body it has always had.
+            ...(attachments?.length ? { attachments } : {}),
+        })
         .then((res) => res.data);
 }
 
