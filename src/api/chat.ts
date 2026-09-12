@@ -82,6 +82,22 @@ export function sendMessage(
         .then((res) => res.data);
 }
 
+/** How much was removed, so the confirmation can say what actually happened. */
+export interface DeletedHistory {
+    conversations: number;
+    messages: number;
+}
+
+/**
+ * Deletes every conversation. The assistant only opens the most recent one,
+ * so this is the only way to reach the older ones at all.
+ */
+export function deleteAllConversations(): Promise<DeletedHistory> {
+    return apiClient
+        .delete<SuccessData<DeletedHistory>>("/chat/conversations")
+        .then((res) => res.data);
+}
+
 export function deleteConversation(conversationId: string): Promise<void> {
     return apiClient.delete<void>(`/chat/conversations/${conversationId}`);
 }

@@ -13,6 +13,7 @@ import {
 } from "../../api/resumes";
 import {
     ChatMessage as ApiChatMessage,
+    deleteConversation,
     getConversations,
     getMessages,
     sendMessage as sendChatMessage,
@@ -78,6 +79,36 @@ const MenuButton = styled.button`
 
 const TopBarSpacer = styled.div`
     flex: 1;
+`;
+
+const ThreadTools = styled.div`
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 24px;
+`;
+
+const ClearButton = styled.button`
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    font-family: inherit;
+    font-size: 12px;
+    color: ${colors.textMuted};
+    background: none;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+        color: ${colors.danger};
+        background-color: ${colors.dangerSurface};
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
 `;
 
 const Thread = styled.div`
@@ -425,6 +456,7 @@ const Chat = () => {
     const [chatError, setChatError] = useState<string | null>(null);
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [draft, setDraft] = useState("");
+    const [clearing, setClearing] = useState(false);
     const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
     const attachInputRef = useRef<HTMLInputElement>(null);
 
@@ -528,6 +560,37 @@ const Chat = () => {
         },
         [resumes, showToast]
     );
+
+    async function handleClearConversation() {
+        if (!conversationId) return;
+        // A conversation is not much work to recreate and the messages are
+        // still on screen until it succeeds, so a confirm() is proportionate
+        // here — the irreversible bulk delete in Settings gets a real dialog.
+        if (
+            !window.confirm(
+                "Delete this conversation? This cannot be undone."
+            )
+        ) {
+            return;
+        }
+
+        setClearing(true);
+        setChatError(null);
+        try {
+            await deleteConversation(conversationId);
+            setMessages([]);
+            setConversationId(null);
+            showToast("Conversation deleted");
+        } catch (err) {
+            setChatError(
+                err instanceof ApiError
+                    ? err.message
+                    : "Could not delete that conversation. Please try again."
+            );
+        } finally {
+            setClearing(false);
+        }
+    }
 
     function handleAttach(event: ChangeEvent<HTMLInputElement>) {
         const picked: File[] = Array.from(event.target.files ?? []);
@@ -678,6 +741,17 @@ const Chat = () => {
                     <UserMenu />
                 </TopBar>
 
+                {messages.length > 0 && conversationId && (
+                    <ThreadTools>
+                        <ClearButton
+                            type="button"
+                            onClick={handleClearConversation}
+                            disabled={clearing || sending}
+                        >
+                            {clearing ? "Deleting…" : "Delete this conversation"}
+                        </ClearButton>
+                    </ThreadTools>
+                )}
                 <Thread ref={threadRef}>
                     {messages.length === 0 ? (
                         <Greeting>
