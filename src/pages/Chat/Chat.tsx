@@ -28,7 +28,10 @@ import {
     toBase64,
     validateAttachment,
 } from "../../utils/attachments";
-import { useSpeechRecognition } from "../../hooks/useSpeechRecognition";
+import {
+    DICTATION_LANGUAGES,
+    useSpeechRecognition,
+} from "../../hooks/useSpeechRecognition";
 import logoIcon from "../../assets/logo-icon.png";
 
 const Page = styled.div`
@@ -272,6 +275,23 @@ const ChipRemove = styled.button`
     &:hover {
         color: ${colors.text};
         background-color: #e6e6ec;
+    }
+`;
+
+const LanguageSelect = styled.select`
+    height: 28px;
+    padding: 0 4px;
+    font-family: inherit;
+    font-size: 11px;
+    color: ${colors.label};
+    background-color: transparent;
+    border: 1px solid ${colors.border};
+    border-radius: 8px;
+    cursor: pointer;
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
 `;
 
@@ -713,7 +733,11 @@ const Chat = () => {
                 </Thread>
 
                 <Composer onSubmit={handleSend}>
-                    {chatError && <ChatError role="alert">{chatError}</ChatError>}
+                    {(chatError || speech.error) && (
+                        <ChatError role="alert">
+                            {chatError ?? speech.error}
+                        </ChatError>
+                    )}
                     <ComposerBox>
                         {attachments.length > 0 && (
                             <AttachmentRow>
@@ -746,15 +770,27 @@ const Chat = () => {
                             </AttachmentRow>
                         )}
                         <Input
-                            value={draft}
+                            value={
+                                speech.interim
+                                    ? `${draft}${draft ? " " : ""}${speech.interim}`
+                                    : draft
+                            }
                             onChange={(e) => setDraft(e.target.value)}
+                            // While words are still being heard they are not
+                            // the user's text yet; typing over them would
+                            // fight the next result.
+                            readOnly={Boolean(speech.interim)}
                             onKeyDown={(e) => {
                                 if (e.key === "Enter" && !e.shiftKey) {
                                     e.preventDefault();
                                     e.currentTarget.form?.requestSubmit();
                                 }
                             }}
-                            placeholder="Type your question..."
+                            placeholder={
+                                speech.listening
+                                    ? "Listening…"
+                                    : "Type your question..."
+                            }
                             rows={1}
                             aria-label="Message CareerMate AI"
                         />
@@ -775,6 +811,26 @@ const Chat = () => {
                                 <PlusIcon />
                             </RoundButton>
                             <RightActions>
+                                {speech.supported && (
+                                    <LanguageSelect
+                                        value={speech.language}
+                                        onChange={(e) =>
+                                            speech.setLanguage(e.target.value)
+                                        }
+                                        disabled={speech.listening}
+                                        aria-label="Dictation language"
+                                        title="Dictation language"
+                                    >
+                                        {DICTATION_LANGUAGES.map((language) => (
+                                            <option
+                                                key={language.code}
+                                                value={language.code}
+                                            >
+                                                {language.label}
+                                            </option>
+                                        ))}
+                                    </LanguageSelect>
+                                )}
                                 {speech.supported && (
                                     <RoundButton
                                         type="button"
