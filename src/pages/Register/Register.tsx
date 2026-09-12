@@ -8,9 +8,9 @@ import GradientButton from "../../components/GradientButton";
 import AlertBanner from "../../components/AlertBanner";
 import Modal from "../../components/Modal";
 import SuccessMessage from "../../components/SuccessMessage";
-import { useAuth } from "../../context/AuthContext";
 import { ApiError } from "../../api/client";
 import * as authApi from "../../api/auth";
+import type { VerifyEmailState } from "../VerifyEmail";
 import {
     FieldErrors,
     RegisterFormValues,
@@ -107,7 +107,6 @@ const Register = () => {
     /** The design shows a dedicated modal for an already-registered email. */
     const [emailTaken, setEmailTaken] = useState(false);
 
-    const { signIn } = useAuth();
     const navigate = useNavigate();
 
     const setValue = (key: keyof RegisterFormValues, value: string) => {
@@ -130,17 +129,23 @@ const Register = () => {
         setSubmitting(true);
 
         try {
-            const session = await authApi.register({
+            const registeredEmail = await authApi.register({
                 fullName: values.fullName.trim(),
                 email: values.email.trim(),
                 password: values.password,
             });
 
             setSucceeded(true);
-            // The design logs the new account straight in after a short beat.
+            // The account exists but cannot be used until the emailed code is
+            // entered, so the next stop is the code screen, not onboarding.
             window.setTimeout(() => {
-                signIn(session, true);
-                navigate("/onboarding", { replace: true });
+                navigate("/verify-email", {
+                    replace: true,
+                    state: {
+                        email: registeredEmail,
+                        codeSent: true,
+                    } satisfies VerifyEmailState,
+                });
             }, 1200);
         } catch (err) {
             if (err instanceof ApiError && err.status === 409) {
@@ -159,7 +164,7 @@ const Register = () => {
     if (succeeded) {
         return (
             <AuthLayout showPanel={false}>
-                <SuccessMessage message="🎉 Registration successful! Logging you in..." />
+                <SuccessMessage message="🎉 Registration successful! Sending you a code..." />
             </AuthLayout>
         );
     }

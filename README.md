@@ -107,6 +107,7 @@ sections are imported as `import Hero from "./Hero"`.
 | `/`                | Landing page                  | public   |
 | `/login`           | Login                         | public   |
 | `/register`        | Register                      | public   |
+| `/verify-email`    | Email verification code       | public   |
 | `/forgot-password` | Reset password (3 steps)      | public   |
 | `/onboarding`      | First-run setup               | required |
 | `/app`             | Assistant (resume + chat)     | required |
@@ -114,3 +115,7 @@ sections are imported as `import Hero from "./Hero"`.
 | anything else      | Redirects to `/`              | —        |
 
 Protected routes redirect to `/login` and send the user back afterwards.
+
+`/verify-email` needs an address in the router state, so it is only
+reachable from `/register` or from a login the backend refused as
+unverified; opening it directly sends the user to `/register`.

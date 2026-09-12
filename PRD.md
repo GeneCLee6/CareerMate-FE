@@ -22,6 +22,7 @@
 |---|---|---|---|
 | Landing page | `/` | ❌ | ✅ 完成 |
 | 註冊 | `/register` | ❌ | ✅ 完成 |
+| Email 驗證碼 | `/verify-email` | ❌ | ✅ 完成 |
 | 登入 | `/login` | ❌ | ✅ 完成 |
 | 忘記密碼（三步驟） | `/forgot-password` | ❌ | ⚠️ 見 §6 |
 | Onboarding | `/onboarding` | ✅ | ✅ 完成 |

@@ -10,6 +10,7 @@ import { useToast } from "../../components/Toast";
 import { useAuth } from "../../context/AuthContext";
 import { ApiError } from "../../api/client";
 import * as authApi from "../../api/auth";
+import type { VerifyEmailState } from "../VerifyEmail";
 import {
     FieldErrors,
     LoginFormValues,
@@ -140,6 +141,16 @@ const Login = () => {
         } catch (err) {
             if (err instanceof ApiError && err.isNetworkError) {
                 setBanner(`\u{1F50C} ${err.message}`);
+            } else if (err instanceof ApiError && err.status === 403) {
+                // The password was right but the account was never verified.
+                // Send them to the code screen rather than to a dead end.
+                navigate("/verify-email", {
+                    state: {
+                        email: values.email.trim(),
+                        notice: err.message,
+                    } satisfies VerifyEmailState,
+                });
+                return;
             } else if (err instanceof ApiError && err.status === 401) {
                 // Don't echo which half was wrong — the design shows one message.
                 setBanner("Invalid email or password. Please try again.");
