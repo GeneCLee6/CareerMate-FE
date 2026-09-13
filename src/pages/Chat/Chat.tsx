@@ -8,12 +8,15 @@ import { ApiError } from "../../api/client";
 import {
     Resume,
     deleteResume,
+    getResumeDownloadUrl,
     getResumes,
     uploadResume,
 } from "../../api/resumes";
 import {
     ChatMessage as ApiChatMessage,
+    Conversation,
     deleteConversation,
+    getChatStatus,
     getConversations,
     getMessages,
     sendMessage as sendChatMessage,
@@ -79,6 +82,26 @@ const MenuButton = styled.button`
 
 const TopBarSpacer = styled.div`
     flex: 1;
+`;
+
+/** Sits above the thread when the server has no AI key configured. */
+const StatusNotice = styled.p`
+    margin: 0 24px 12px;
+    padding: 10px 14px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: ${colors.label};
+    background-color: #fff7e6;
+    border: 1px solid #ffd591;
+    border-radius: 10px;
+`;
+
+const ThreadLoading = styled.p`
+    margin: 0;
+    padding: 40px 0;
+    text-align: center;
+    font-size: 14px;
+    color: ${colors.textMuted};
 `;
 
 const ThreadTools = styled.div`
@@ -457,6 +480,10 @@ const Chat = () => {
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [draft, setDraft] = useState("");
     const [clearing, setClearing] = useState(false);
+    /** Null until the first load finishes, so the empty state is not shown first. */
+    const [loadingThread, setLoadingThread] = useState(true);
+    const [conversations, setConversations] = useState<Conversation[]>([]);
+    const [aiConfigured, setAiConfigured] = useState(true);
     const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
     const attachInputRef = useRef<HTMLInputElement>(null);
 
@@ -485,9 +512,11 @@ const Chat = () => {
         let cancelled = false;
         // Resume the most recent conversation so a refresh doesn't lose it.
         getConversations()
-            .then((conversations) => {
-                const latest = conversations[0];
-                if (cancelled || !latest) return;
+            .then((list) => {
+                if (cancelled) return;
+                setConversations(list);
+                const latest = list[0];
+                if (!latest) return;
                 setConversationId(latest.id);
                 return getMessages(latest.id).then((history) => {
                     if (!cancelled) setMessages(history);
@@ -495,6 +524,20 @@ const Chat = () => {
             })
             .catch(() => {
                 // An empty thread is a fine starting point.
+            })
+            .finally(() => {
+                // Only now is "no messages" the truth rather than "not yet".
+                if (!cancelled) setLoadingThread(false);
+            });
+
+        // Asked once, so the screen can say the assistant is unavailable
+        // before the user types a message and waits for it to fail.
+        getChatStatus()
+            .then(({ configured }) => {
+                if (!cancelled) setAiConfigured(configured);
+            })
+            .catch(() => {
+                // If even this cannot be reached, sending will say so.
             });
         return () => {
             cancelled = true;
@@ -561,6 +604,50 @@ const Chat = () => {
         [resumes, showToast]
     );
 
+    async function handleDownloadResume(resume: Resume) {
+        try {
+            const url = await getResumeDownloadUrl(resume.id);
+            // Opened rather than fetched: the URL is presigned and short-lived,
+            // and the browser handles the save dialog and the filename.
+            window.open(url, "_blank", "noopener,noreferrer");
+        } catch (err) {
+            showToast(
+                err instanceof ApiError
+                    ? err.message
+                    : "Could not download that resume."
+            );
+        }
+    }
+
+    async function handleOpenConversation(id: string) {
+        if (id === conversationId || sending) return;
+
+        setDrawerOpen(false);
+        setChatError(null);
+        setLoadingThread(true);
+        setConversationId(id);
+        try {
+            setMessages(await getMessages(id));
+        } catch (err) {
+            setChatError(
+                err instanceof ApiError
+                    ? err.message
+                    : "Could not open that conversation."
+            );
+            setMessages([]);
+        } finally {
+            setLoadingThread(false);
+        }
+    }
+
+    /** Leaves the current conversation behind without deleting it. */
+    function handleNewConversation() {
+        setConversationId(null);
+        setMessages([]);
+        setChatError(null);
+        setDrawerOpen(false);
+    }
+
     async function handleClearConversation() {
         if (!conversationId) return;
         // A conversation is not much work to recreate and the messages are
@@ -580,6 +667,9 @@ const Chat = () => {
             await deleteConversation(conversationId);
             setMessages([]);
             setConversationId(null);
+            setConversations((prev) =>
+                prev.filter((c) => c.id !== conversationId)
+            );
             showToast("Conversation deleted");
         } catch (err) {
             setChatError(
@@ -688,6 +778,12 @@ const Chat = () => {
                 if (a.previewUrl) URL.revokeObjectURL(a.previewUrl);
             });
             setConversationId(result.conversation.id);
+            // A new conversation has to reach the list, and an existing one
+            // moves to the top because it was just used.
+            setConversations((prev) => [
+                result.conversation,
+                ...prev.filter((c) => c.id !== result.conversation.id),
+            ]);
             setMessages((prev) => [
                 ...prev.filter((message) => message.id !== pendingId),
                 result.userMessage,
@@ -725,6 +821,11 @@ const Chat = () => {
                 onClose={() => setDrawerOpen(false)}
                 uploadingName={uploadingName}
                 uploadProgress={uploadProgress}
+                conversations={conversations}
+                activeConversationId={conversationId}
+                onOpenConversation={handleOpenConversation}
+                onNewConversation={handleNewConversation}
+                onDownloadResume={handleDownloadResume}
                 uploadError={uploadError}
             />
 
@@ -741,6 +842,13 @@ const Chat = () => {
                     <UserMenu />
                 </TopBar>
 
+                {!aiConfigured && (
+                    <StatusNotice role="status">
+                        The assistant is not configured on this server yet, so
+                        replies are unavailable. Everything else — resumes,
+                        profile, settings — still works.
+                    </StatusNotice>
+                )}
                 {messages.length > 0 && conversationId && (
                     <ThreadTools>
                         <ClearButton
@@ -753,7 +861,9 @@ const Chat = () => {
                     </ThreadTools>
                 )}
                 <Thread ref={threadRef}>
-                    {messages.length === 0 ? (
+                    {loadingThread ? (
+                        <ThreadLoading>Loading your conversation…</ThreadLoading>
+                    ) : messages.length === 0 ? (
                         <Greeting>
                             <GreetingTitle>
                                 Hi, {user.displayName || user.fullName} 👋
