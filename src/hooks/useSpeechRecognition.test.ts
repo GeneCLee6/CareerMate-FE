@@ -1,5 +1,8 @@
 import { act, renderHook } from "@testing-library/react";
-import { useSpeechRecognition } from "./useSpeechRecognition";
+import {
+    DICTATION_LANGUAGES,
+    useSpeechRecognition,
+} from "./useSpeechRecognition";
 
 /** Stands in for the browser's SpeechRecognition, driven by the test. */
 class FakeRecognition {
@@ -249,11 +252,13 @@ describe("language", () => {
     });
 
     it("ignores a stored value that is no longer offered", () => {
+        // Asserted against the offered list rather than a fixed trio: the
+        // list is now built from what the browser reports, so hard-coding
+        // codes here would tie the test to one machine's settings.
         window.localStorage.setItem("careermate.dictationLanguage", "kl-GL");
         const { result } = renderHook(() => useSpeechRecognition(jest.fn()));
 
-        expect(
-            ["en-AU", "zh-TW", "zh-CN"].includes(result.current.language)
-        ).toBe(true);
+        const offered = DICTATION_LANGUAGES.map((l) => l.code);
+        expect(offered).toContain(result.current.language);
     });
 });

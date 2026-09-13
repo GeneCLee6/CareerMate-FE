@@ -1,4 +1,5 @@
 import { apiClient, SuccessData, SuccessMessage } from "./client";
+import { UserField, UserRole } from "../utils/profileOptions";
 
 /** Mirrors the fields the backend's user model exposes through toJSON. */
 export interface User {
@@ -6,8 +7,8 @@ export interface User {
     email: string;
     fullName: string;
     displayName?: string;
-    role?: "Student" | "Other";
-    field?: "FE" | "BE";
+    role?: UserRole;
+    field?: UserField;
     goal?: string;
     avatar?: string;
     avatarUrl?: string | null;

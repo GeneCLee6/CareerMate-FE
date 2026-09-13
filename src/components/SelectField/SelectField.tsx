@@ -53,7 +53,11 @@ export interface SelectFieldProps
     id: string;
     label: string;
     options: SelectOption[];
-    /** Shown as the empty first entry; the design labels it "Selected". */
+    /**
+     * Shown while nothing is chosen. It is not a choice: the entry is
+     * disabled and hidden, so it never appears among the options and cannot
+     * be picked back.
+     */
     placeholder?: string;
     invalid?: boolean;
     /** Pill on onboarding, softer corners in settings. */
@@ -66,7 +70,7 @@ const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
             id,
             label,
             options,
-            placeholder = "Selected",
+            placeholder = "Select an option",
             invalid,
             radius = "24px",
             value,
@@ -85,7 +89,15 @@ const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
                 $placeholder={!value}
                 aria-invalid={invalid ? "true" : undefined}
             >
-                <option value="">{placeholder}</option>
+                {/*
+                    disabled: picking it would clear a field the user had
+                    already filled, which is never what they meant.
+                    hidden: it is a prompt, not an option, so it does not
+                    belong in the list of things to choose from.
+                */}
+                <option value="" disabled hidden>
+                    {placeholder}
+                </option>
                 {options.map((option) => (
                     <option key={option.value} value={option.value}>
                         {option.label}
