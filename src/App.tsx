@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import VerifyEmail from "./pages/VerifyEmail";
 import ForgotPassword from "./pages/ForgotPassword";
+import { Privacy, Terms } from "./pages/Legal";
 import Onboarding from "./pages/Onboarding";
 import Chat from "./pages/Chat";
 import Settings from "./pages/Settings";
@@ -26,6 +27,11 @@ function App() {
                     <div className="App">
                         <Routes>
                             <Route path="/" element={<Home />} />
+                            {/* Public and unauthenticated on purpose: someone
+                                deciding whether to sign up needs to read these
+                                first. */}
+                            <Route path="/terms" element={<Terms />} />
+                            <Route path="/privacy" element={<Privacy />} />
                             <Route
                                 path="/login"
                                 element={

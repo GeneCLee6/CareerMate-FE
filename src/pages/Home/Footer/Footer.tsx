@@ -1,4 +1,5 @@
-import styled from "styled-components";
+import { Link as RouterLink } from "react-router-dom";
+import styled, { css } from "styled-components";
 import { landingColors, landingLayout } from "../../../styles/tokens";
 import logoIcon from "../../../assets/logo-icon.png";
 import logoText from "../../../assets/logo-text.png";
@@ -10,8 +11,8 @@ interface FooterLinkItem {
 }
 
 const FOOTER_LINKS: FooterLinkItem[] = [
-    { href: "#terms", label: "Terms" },
-    { href: "#privacy", label: "Privacy" },
+    { href: "/terms", label: "Terms" },
+    { href: "/privacy", label: "Privacy" },
     { href: "#contact", label: "Contact" },
     {
         href: "https://jracademy.com.au",
@@ -76,7 +77,8 @@ const Links = styled.div`
     gap: 32px;
 `;
 
-const Link = styled.a`
+/** Shared so the routed and plain links cannot drift apart visually. */
+const footerLinkStyles = css`
     font-size: 15px;
     font-weight: 400;
     color: ${landingColors.body};
@@ -86,6 +88,15 @@ const Link = styled.a`
     &:hover {
         color: ${landingColors.heading};
     }
+`;
+
+const Link = styled.a`
+    ${footerLinkStyles}
+`;
+
+/** Same styling as Link, but routed — an in-app page should not reload. */
+const RoutedLink = styled(RouterLink)`
+    ${footerLinkStyles}
 `;
 
 const Footer = () => {
@@ -100,20 +111,26 @@ const Footer = () => {
                     <Copyright>© 2026 CareerMate AI by JR Academy</Copyright>
                 </Left>
                 <Links>
-                    {FOOTER_LINKS.map((link) => (
-                        <Link
-                            key={link.label}
-                            href={link.href}
-                            {...(link.external
-                                ? {
-                                      target: "_blank",
-                                      rel: "noopener noreferrer",
-                                  }
-                                : {})}
-                        >
-                            {link.label}
-                        </Link>
-                    ))}
+                    {FOOTER_LINKS.map((link) =>
+                        link.href.startsWith("/") ? (
+                            <RoutedLink key={link.label} to={link.href}>
+                                {link.label}
+                            </RoutedLink>
+                        ) : (
+                            <Link
+                                key={link.label}
+                                href={link.href}
+                                {...(link.external
+                                    ? {
+                                          target: "_blank",
+                                          rel: "noopener noreferrer",
+                                      }
+                                    : {})}
+                            >
+                                {link.label}
+                            </Link>
+                        )
+                    )}
                 </Links>
             </FooterContainer>
         </Container>
