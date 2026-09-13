@@ -14,20 +14,26 @@ import { SelectOption } from "../components/SelectField";
 export const USER_ROLES = [
     "Student",
     "Graduate",
+    "Bootcamp",
+    "SelfTaught",
     "CareerChanger",
     "Professional",
     "Other",
 ] as const;
 
 export const USER_FIELDS = [
-    "FE",
-    "BE",
+    "Frontend",
+    "Backend",
     "FullStack",
     "Mobile",
-    "Data",
+    "DataScience",
+    "MachineLearning",
     "DevOps",
+    "Cloud",
     "QA",
-    "UIUX",
+    "Security",
+    "Design",
+    "ProductManagement",
     "Other",
 ] as const;
 
@@ -42,20 +48,26 @@ interface TypedOption<T extends string> extends SelectOption {
 export const ROLE_OPTIONS: TypedOption<UserRole>[] = [
     { value: "Student", label: "Student" },
     { value: "Graduate", label: "Recent graduate" },
+    { value: "Bootcamp", label: "Bootcamp graduate" },
+    { value: "SelfTaught", label: "Self-taught developer" },
     { value: "CareerChanger", label: "Changing career into tech" },
     { value: "Professional", label: "Working professional" },
     { value: "Other", label: "Other" },
 ];
 
 export const FIELD_OPTIONS: TypedOption<UserField>[] = [
-    { value: "FE", label: "Frontend" },
-    { value: "BE", label: "Backend" },
+    { value: "Frontend", label: "Frontend" },
+    { value: "Backend", label: "Backend" },
     { value: "FullStack", label: "Full-stack" },
     { value: "Mobile", label: "Mobile" },
-    { value: "Data", label: "Data / Machine Learning" },
-    { value: "DevOps", label: "DevOps / Cloud" },
-    { value: "QA", label: "QA / Testing" },
-    { value: "UIUX", label: "UI/UX Design" },
+    { value: "DataScience", label: "Data Science & Analytics" },
+    { value: "MachineLearning", label: "Machine Learning / AI" },
+    { value: "DevOps", label: "DevOps & Infrastructure" },
+    { value: "Cloud", label: "Cloud Engineering" },
+    { value: "QA", label: "QA & Testing" },
+    { value: "Security", label: "Security" },
+    { value: "Design", label: "UI/UX Design" },
+    { value: "ProductManagement", label: "Product Management" },
     { value: "Other", label: "Other" },
 ];
 
