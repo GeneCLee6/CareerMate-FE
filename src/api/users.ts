@@ -1,12 +1,13 @@
 import { apiClient, SuccessData, SuccessMessage } from "./client";
 import { User } from "./auth";
+import { UserField, UserRole } from "../utils/profileOptions";
 
 /** Matches the backend's updateMeSchema. */
 export interface UpdateProfileInput {
     fullName: string;
     displayName?: string;
-    role?: "Student" | "Other";
-    field?: "FE" | "BE";
+    role?: UserRole;
+    field?: UserField;
     goal?: string;
 }
 

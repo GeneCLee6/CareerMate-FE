@@ -17,6 +17,7 @@ import {
     ROLE_OPTIONS,
     ONBOARDING_STEPS,
 } from "./options";
+import { toUserField, toUserRole } from "../../utils/profileOptions";
 
 const Page = styled.div`
     display: grid;
@@ -234,8 +235,8 @@ const Onboarding = () => {
             const updated = await updateProfile({
                 // fullName is required by the API, so send the current one back.
                 fullName: user?.fullName ?? "",
-                role: role as "Student" | "Other",
-                field: field as "FE" | "BE",
+                role: toUserRole(role),
+                field: toUserField(field),
                 goal,
             });
             updateUser(updated);

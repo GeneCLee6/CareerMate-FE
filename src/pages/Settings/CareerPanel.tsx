@@ -7,6 +7,7 @@ import { useAuth } from "../../context/AuthContext";
 import { ApiError } from "../../api/client";
 import { updateProfile } from "../../api/users";
 import { FIELD_OPTIONS, ROLE_OPTIONS } from "../Onboarding/options";
+import { toUserField, toUserRole } from "../../utils/profileOptions";
 import {
     PanelForm,
     PanelTitle,
@@ -42,8 +43,8 @@ const CareerPanel = () => {
             const updated = await updateProfile({
                 fullName: user?.fullName ?? "",
                 displayName: user?.displayName,
-                ...(role ? { role: role as "Student" | "Other" } : {}),
-                ...(field ? { field: field as "FE" | "BE" } : {}),
+                ...(toUserRole(role) ? { role: toUserRole(role) } : {}),
+                ...(toUserField(field) ? { field: toUserField(field) } : {}),
                 ...(goal.trim() ? { goal: goal.trim() } : {}),
             });
             updateUser(updated);

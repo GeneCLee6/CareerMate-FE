@@ -1,4 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+    DictationLanguage,
+    buildDictationLanguages,
+    defaultDictationLanguage,
+} from "./dictationLanguages";
+
 
 /**
  * Dictation through the browser's own speech recognition.
@@ -35,24 +41,15 @@ interface SpeechRecognitionEventLike {
 
 type RecognitionConstructor = new () => SpeechRecognitionLike;
 
-export interface DictationLanguage {
-    code: string;
-    label: string;
-}
+export type { DictationLanguage };
 
 /**
- * Offered languages.
- *
- * Recognition is not multilingual: the engine is told one language and hears
- * everything as that language. Speaking Mandarin to an engine set to English
- * does not produce poor Chinese, it produces confident nonsense — which is
- * what made this feel broken.
+ * Built from what the browser reports the user speaks, rather than a list
+ * chosen up front. Computed once: navigator.languages does not change while
+ * a page is open, and rebuilding it would churn the picker's options.
  */
-export const DICTATION_LANGUAGES: DictationLanguage[] = [
-    { code: "en-AU", label: "English (AU)" },
-    { code: "zh-TW", label: "中文（繁體）" },
-    { code: "zh-CN", label: "中文（简体）" },
-];
+export const DICTATION_LANGUAGES: DictationLanguage[] =
+    buildDictationLanguages();
 
 const STORAGE_KEY = "careermate.dictationLanguage";
 
@@ -66,7 +63,7 @@ function getConstructor(): RecognitionConstructor | null {
     return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
-/** Last choice, or the closest offered match for the browser's own language. */
+/** Last choice, or whatever the browser says the user prefers. */
 function initialLanguage(): string {
     try {
         const saved = window.localStorage.getItem(STORAGE_KEY);
@@ -76,12 +73,7 @@ function initialLanguage(): string {
     } catch {
         // A browser set to block site data throws on access.
     }
-
-    const browser = (navigator.language || "").toLowerCase();
-    const match = DICTATION_LANGUAGES.find((l) =>
-        browser.startsWith(l.code.slice(0, 2).toLowerCase())
-    );
-    return match?.code ?? DICTATION_LANGUAGES[0].code;
+    return defaultDictationLanguage(DICTATION_LANGUAGES);
 }
 
 export interface UseSpeechRecognition {

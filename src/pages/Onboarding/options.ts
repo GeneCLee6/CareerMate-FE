@@ -6,16 +6,9 @@ export const ONBOARDING_STEPS = [
     "Finish",
 ] as const;
 
-/** Values match the backend's enums (Student | Other, FE | BE). */
-export const ROLE_OPTIONS: SelectOption[] = [
-    { value: "Student", label: "Student" },
-    { value: "Other", label: "Other" },
-];
-
-export const FIELD_OPTIONS: SelectOption[] = [
-    { value: "FE", label: "Frontend" },
-    { value: "BE", label: "Backend" },
-];
+// The role and field lists live with the types they belong to, so a new
+// option cannot be added without the union knowing about it.
+export { ROLE_OPTIONS, FIELD_OPTIONS } from "../../utils/profileOptions";
 
 /** `goal` is free text on the server; these are the presets the design offers. */
 export const GOAL_OPTIONS: SelectOption[] = [
