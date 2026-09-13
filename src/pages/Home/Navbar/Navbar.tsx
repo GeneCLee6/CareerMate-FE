@@ -1,7 +1,9 @@
 import { Link as RouterLink } from "react-router-dom";
 import styled, { css } from "styled-components";
 import UserMenu from "../../../components/UserMenu";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
+import { sectionAnchor } from "../sectionAnchor";
 import { landingColors, landingLayout } from "../../../styles/tokens";
 import logoIcon from "../../../assets/logo-icon.png";
 import logoText from "../../../assets/logo-text.png";
@@ -110,6 +112,7 @@ const StartButton = styled(RouterLink)`
 
 const Navbar = () => {
     const { isAuthenticated } = useAuth();
+    const { pathname } = useLocation();
 
     return (
         <Container>
@@ -119,8 +122,8 @@ const Navbar = () => {
                     <img src={logoText} alt="CareerMate AI text" />
                 </Logo>
                 <Links>
-                    <Link href="#features">Features</Link>
-                    <Link href="#demo">Demo</Link>
+                    <Link href={sectionAnchor(pathname, "features")}>Features</Link>
+                    <Link href={sectionAnchor(pathname, "demo")}>Demo</Link>
                 </Links>
                 <Buttons>
                     {isAuthenticated ? (

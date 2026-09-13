@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { useEffect } from "react";
 import Navbar from "./Navbar";
 import Hero from "./Hero";
 import ProductPreview from "./ProductPreview";
@@ -18,6 +19,16 @@ const MainContent = styled.main`
 `;
 
 const Home = () => {
+    // Arriving at "/#contact" from another page loads this route with the
+    // fragment already in the URL, and nothing has rendered yet when the
+    // browser would normally scroll. Do it once the sections exist.
+    useEffect(() => {
+        const { hash } = window.location;
+        if (!hash) return;
+        const target = document.getElementById(hash.slice(1));
+        if (target) target.scrollIntoView({ behavior: "smooth" });
+    }, []);
+
     return (
         <>
             <Navbar />
