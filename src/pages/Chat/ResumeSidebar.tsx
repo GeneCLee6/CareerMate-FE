@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import styled from "styled-components";
 import Avatar from "../../components/Avatar";
 import { Resume } from "../../api/resumes";
+import { Conversation } from "../../api/chat";
 import { User } from "../../api/auth";
 import { colors, gradient } from "../../styles/tokens";
 import { RESUME_ACCEPT } from "../../utils/fileValidation";
@@ -100,6 +101,82 @@ const LogoIcon = styled.img`
 const LogoText = styled.img`
     height: 17px;
     width: auto;
+`;
+
+const NewChatButton = styled.button`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    height: 38px;
+    margin-bottom: 18px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: ${colors.text};
+    background-color: #fff;
+    border: 1px solid ${colors.border};
+    border-radius: 19px;
+    cursor: pointer;
+
+    &:hover {
+        border-color: ${colors.borderFocus};
+    }
+`;
+
+const ConversationList = styled.ul`
+    margin: 14px 0 0;
+    padding: 0;
+    list-style: none;
+    /* Bounded so a long history cannot push the resume panel off-screen. */
+    max-height: 220px;
+    overflow-y: auto;
+`;
+
+const ConversationItem = styled.li`
+    margin-bottom: 4px;
+`;
+
+const ConversationButton = styled.button<{ $active: boolean }>`
+    display: block;
+    width: 100%;
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: 13px;
+    text-align: left;
+    color: ${({ $active }) => ($active ? colors.text : colors.label)};
+    background-color: ${({ $active }) => ($active ? "#f1f1f7" : "transparent")};
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:hover {
+        background-color: #f1f1f7;
+    }
+`;
+
+const NoConversationsHint = styled.p`
+    margin: 12px 0 0;
+    font-size: 12px;
+    color: ${colors.placeholder};
+`;
+
+const DownloadButton = styled.a`
+    display: inline-flex;
+    align-items: center;
+    padding: 4px;
+    color: ${colors.label};
+    border-radius: 6px;
+    cursor: pointer;
+
+    &:hover {
+        color: ${colors.text};
+        background-color: #eeeef4;
+    }
 `;
 
 const SectionTitle = styled.h2`
@@ -324,6 +401,23 @@ const UploadIcon = () => (
     </svg>
 );
 
+const DownloadIcon = () => (
+    <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <path d="M12 3v12M12 15l-4-4M12 15l4-4" />
+        <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+    </svg>
+);
+
 const PdfIcon = () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <rect x="3" y="2" width="18" height="20" rx="3" fill="#e8effe" />
@@ -397,6 +491,11 @@ export interface ResumeSidebarProps {
     uploadingName: string | null;
     /** 0 to 1 while a file is uploading. */
     uploadProgress: number;
+    conversations: Conversation[];
+    activeConversationId: string | null;
+    onOpenConversation: (id: string) => void;
+    onNewConversation: () => void;
+    onDownloadResume: (resume: Resume) => void;
     /** Why the last attempt failed; cleared when a new one starts. */
     uploadError: string | null;
     /** Drawer state; ignored at desktop widths, where the column is static. */
@@ -414,6 +513,11 @@ const ResumeSidebar = ({
     onClose,
     uploadingName,
     uploadProgress,
+    conversations,
+    activeConversationId,
+    onOpenConversation,
+    onNewConversation,
+    onDownloadResume,
     uploadError,
 }: ResumeSidebarProps) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -442,6 +546,37 @@ const ResumeSidebar = ({
                 <LogoIcon src={logoIcon} alt="" />
                 <LogoText src={logoText} alt="CareerMate AI" />
             </Logo>
+
+            <NewChatButton type="button" onClick={onNewConversation}>
+                + New conversation
+            </NewChatButton>
+
+            <SectionTitle>Conversations</SectionTitle>
+            {conversations.length === 0 ? (
+                <NoConversationsHint>
+                    Your conversations will appear here.
+                </NoConversationsHint>
+            ) : (
+                <ConversationList>
+                    {conversations.map((conversation) => (
+                        <ConversationItem key={conversation.id}>
+                            <ConversationButton
+                                type="button"
+                                $active={conversation.id === activeConversationId}
+                                aria-current={
+                                    conversation.id === activeConversationId
+                                        ? "true"
+                                        : undefined
+                                }
+                                onClick={() => onOpenConversation(conversation.id)}
+                                title={conversation.title}
+                            >
+                                {conversation.title}
+                            </ConversationButton>
+                        </ConversationItem>
+                    ))}
+                </ConversationList>
+            )}
 
             <SectionTitle>My Resume</SectionTitle>
             <UploadButton
@@ -502,6 +637,15 @@ const ResumeSidebar = ({
                             <FileName title={resume.fileName}>
                                 {resume.fileName}
                             </FileName>
+                            <DownloadButton
+                                as="button"
+                                type="button"
+                                onClick={() => onDownloadResume(resume)}
+                                aria-label={`Download ${resume.fileName}`}
+                                title="Download"
+                            >
+                                <DownloadIcon />
+                            </DownloadButton>
                             <DeleteButton
                                 type="button"
                                 onClick={() => onDelete(resume)}
