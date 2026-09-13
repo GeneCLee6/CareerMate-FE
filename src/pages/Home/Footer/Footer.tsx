@@ -1,19 +1,22 @@
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useLocation } from "react-router-dom";
 import styled, { css } from "styled-components";
 import { landingColors, landingLayout } from "../../../styles/tokens";
 import logoIcon from "../../../assets/logo-icon.png";
 import logoText from "../../../assets/logo-text.png";
+import { sectionAnchor } from "../sectionAnchor";
 
 interface FooterLinkItem {
     href: string;
     label: string;
     external?: boolean;
+    /** A landing-page section: the href has to carry the path off that page. */
+    section?: string;
 }
 
 const FOOTER_LINKS: FooterLinkItem[] = [
     { href: "/terms", label: "Terms" },
     { href: "/privacy", label: "Privacy" },
-    { href: "#contact", label: "Contact" },
+    { href: "#contact", label: "Contact", section: "contact" },
     {
         href: "https://jracademy.com.au",
         label: "JR Academy",
@@ -100,6 +103,7 @@ const RoutedLink = styled(RouterLink)`
 `;
 
 const Footer = () => {
+    const { pathname } = useLocation();
     return (
         <Container>
             <FooterContainer>
@@ -112,7 +116,14 @@ const Footer = () => {
                 </Left>
                 <Links>
                     {FOOTER_LINKS.map((link) =>
-                        link.href.startsWith("/") ? (
+                        link.section ? (
+                            <Link
+                                key={link.label}
+                                href={sectionAnchor(pathname, link.section)}
+                            >
+                                {link.label}
+                            </Link>
+                        ) : link.href.startsWith("/") ? (
                             <RoutedLink key={link.label} to={link.href}>
                                 {link.label}
                             </RoutedLink>
