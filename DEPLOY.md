@@ -12,8 +12,12 @@ conclusions. This one covers the frontend.
 | Node version | 20 |
 
 **An SPA fallback is required**: every path must serve `index.html`, or
-entering `/login` or `/app` directly returns 404. Add a `_redirects` file in
-`public/`:
+entering `/login` or `/app` directly returns 404. Cloudflare Pages does this
+automatically: when the build has no top-level `404.html` (a CRA build has
+none), it treats the site as a single-page application and serves the root
+for every path. Nothing needs adding — just do not add a `404.html`.
+
+On Netlify, which does not do this, add `public/_redirects` containing:
 
 ```
 /*  /index.html  200
