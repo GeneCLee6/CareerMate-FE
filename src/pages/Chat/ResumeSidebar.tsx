@@ -1,16 +1,9 @@
-import { ChangeEvent, useRef } from "react";
+import { ChangeEvent, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
-import {
-    Briefcase,
-    Download,
-    FileText,
-    Target,
-    Trash2,
-    Upload,
-    X,
-} from "lucide-react";
+import { Plus, Settings, SquarePen, Upload, X } from "lucide-react";
 import Avatar from "../../components/Avatar";
+import ConfirmDialog from "../../components/ConfirmDialog";
 import Icon from "../../components/Icon";
 import { Resume } from "../../api/resumes";
 import { Conversation } from "../../api/chat";
@@ -20,19 +13,22 @@ import { RESUME_ACCEPT } from "../../utils/fileValidation";
 import { FIELD_OPTIONS } from "../Onboarding/options";
 import logoIcon from "../../assets/logo-icon.png";
 import logoText from "../../assets/logo-text.png";
+import ResumeCard from "./ResumeCard";
 
 const MOBILE = "860px";
 
 /**
- * A column on desktop. Below the breakpoint it becomes a drawer over the chat,
- * because hiding it outright left no way to manage resumes on a phone.
+ * The sidebar is one full-height column of four regions: logo, chats,
+ * resume, user. Only the chat list grows, and it scrolls inside its own
+ * region — so however many conversations there are, the resume and the user
+ * row stay on screen. Below the breakpoint the same column becomes a drawer.
  */
 const Aside = styled.aside<{ $open: boolean }>`
     display: flex;
     flex-direction: column;
-    width: 268px;
+    width: 272px;
+    height: 100%;
     flex-shrink: 0;
-    padding: 24px 20px;
     background-color: #fff;
     border-right: 1px solid #eef0f3;
 
@@ -42,9 +38,8 @@ const Aside = styled.aside<{ $open: boolean }>`
         left: 0;
         bottom: 0;
         z-index: 60;
-        width: 284px;
+        width: 288px;
         max-width: 86vw;
-        overflow-y: auto;
         box-shadow: 0 0 40px rgba(0, 0, 0, 0.16);
         transform: translateX(${({ $open }) => ($open ? "0" : "-100%")});
         transition: transform 0.25s ease;
@@ -63,25 +58,11 @@ const Backdrop = styled.div`
     }
 `;
 
-/** Only useful in the drawer, so it is hidden on desktop. */
-const CloseButton = styled.button`
-    display: none;
-
-    @media (max-width: ${MOBILE}) {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: absolute;
-        top: 18px;
-        right: 16px;
-        width: 32px;
-        height: 32px;
-        color: ${colors.label};
-        background: none;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-    }
+const Header = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 20px 18px;
 `;
 
 /**
@@ -93,7 +74,6 @@ const Logo = styled(Link)`
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 36px;
     text-decoration: none;
     border-radius: 6px;
 
@@ -113,50 +93,105 @@ const LogoText = styled.img`
     width: auto;
 `;
 
-const NewChatButton = styled.button`
+/** Square and borderless, for an icon that is the whole control. */
+const IconButton = styled.button`
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    width: 100%;
-    height: 38px;
-    margin-bottom: 18px;
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 500;
-    color: ${colors.text};
-    background-color: #fff;
-    border: 1px solid ${colors.border};
-    border-radius: 19px;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    color: ${colors.label};
+    background: none;
+    border: none;
+    border-radius: 8px;
     cursor: pointer;
 
     &:hover {
-        border-color: ${colors.borderFocus};
+        color: ${colors.text};
+        background-color: #f1f1f7;
+    }
+
+    &:focus-visible {
+        outline: 2px solid ${colors.borderFocus};
+        outline-offset: 1px;
     }
 `;
 
-const ConversationList = styled.ul`
-    margin: 14px 0 0;
-    padding: 0;
-    list-style: none;
-    /* Bounded so a long history cannot push the resume panel off-screen. */
-    max-height: 220px;
-    overflow-y: auto;
+/** Only useful in the drawer, so it is hidden on desktop. */
+const CloseButton = styled(IconButton)`
+    display: none;
+
+    @media (max-width: ${MOBILE}) {
+        display: flex;
+    }
 `;
 
-const ConversationItem = styled.li`
-    margin-bottom: 4px;
+/*
+ * Takes whatever height is left. "min-height: 0" is the line that makes the
+ * list scroll inside this region: a flex child's minimum height defaults to
+ * its content's height, so without it a long history would push the resume
+ * section off the bottom of the screen instead of scrolling.
+ */
+const ChatsSection = styled.section`
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 0 12px;
+`;
+
+const SectionHeader = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 30px;
+    padding: 0 8px;
+    margin-bottom: 6px;
+`;
+
+const SectionTitle = styled.h2`
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: ${colors.textMuted};
+`;
+
+const ConversationList = styled.ul`
+    flex: 1;
+    min-height: 0;
+    margin: 0;
+    padding: 0 0 12px;
+    list-style: none;
+    overflow-y: auto;
+    /* A thin, quiet scrollbar: the list scrolls often, and the default bar
+       was the heaviest thing in the sidebar. */
+    scrollbar-width: thin;
+    scrollbar-color: #d9dce3 transparent;
+
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background-color: #d9dce3;
+        border-radius: 3px;
+    }
 `;
 
 const ConversationButton = styled.button<{ $active: boolean }>`
     display: block;
     width: 100%;
+    margin-bottom: 2px;
     padding: 8px 10px;
     font-family: inherit;
     font-size: 13px;
     text-align: left;
     color: ${({ $active }) => ($active ? colors.text : colors.label)};
-    background-color: ${({ $active }) => ($active ? "#f1f1f7" : "transparent")};
+    font-weight: ${({ $active }) => ($active ? 500 : 400)};
+    background-color: ${({ $active }) => ($active ? "#eeeefb" : "transparent")};
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -165,54 +200,85 @@ const ConversationButton = styled.button<{ $active: boolean }>`
     white-space: nowrap;
 
     &:hover {
-        background-color: #f1f1f7;
+        background-color: ${({ $active }) => ($active ? "#eeeefb" : "#f4f5f8")};
     }
 `;
 
-const NoConversationsHint = styled.p`
-    margin: 12px 0 0;
+const Hint = styled.p`
+    margin: 4px 8px 0;
     font-size: 12px;
+    line-height: 1.5;
     color: ${colors.placeholder};
 `;
 
-const DownloadButton = styled.a`
-    display: inline-flex;
+const ResumeSection = styled.section`
+    flex-shrink: 0;
+    padding: 16px 12px;
+    border-top: 1px solid #eef0f3;
+`;
+
+/*
+ * Not a scroll container: each card's actions menu is positioned inside it
+ * and would be clipped. Most users have one or two resumes; with more, the
+ * chat list above gives up height instead, since it is the region that
+ * scrolls.
+ */
+const ResumeList = styled.ul`
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+`;
+
+/** The main call to action when there is no resume yet. */
+const UploadPrompt = styled.button`
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    padding: 4px;
-    color: ${colors.label};
-    border-radius: 6px;
+    gap: 6px;
+    width: 100%;
+    padding: 18px 12px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: ${colors.text};
+    background-color: #fafbfd;
+    border: 1px dashed #cfd3dc;
+    border-radius: 12px;
     cursor: pointer;
 
+    span {
+        font-size: 11px;
+        font-weight: 400;
+        color: ${colors.textMuted};
+    }
+
     &:hover {
-        color: ${colors.text};
-        background-color: #eeeef4;
+        border-color: ${colors.borderFocus};
+        background-color: #f6f6ff;
     }
 `;
 
-const SectionTitle = styled.h2`
-    margin: 0 0 14px;
-    font-size: 15px;
-    font-weight: 400;
-    color: ${colors.text};
-`;
-
-const UploadButton = styled.button`
+/** Secondary once a resume exists: a quiet text button under the list. */
+const UploadAnother = styled.button`
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 10px;
-    width: 100%;
-    height: 44px;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 6px 8px;
     font-family: inherit;
-    font-size: 14px;
-    color: ${colors.text};
-    background-color: #fff;
-    border: 1px solid ${colors.border};
-    border-radius: 22px;
+    font-size: 12px;
+    color: ${colors.label};
+    background: none;
+    border: none;
+    border-radius: 7px;
     cursor: pointer;
 
     &:hover:not(:disabled) {
-        background-color: #fafafa;
+        color: ${colors.text};
+        background-color: #f4f5f8;
     }
 
     &:disabled {
@@ -221,16 +287,9 @@ const UploadButton = styled.button`
     }
 `;
 
-const EmptyHint = styled.p`
-    margin: 14px 0 0;
-    font-size: 12px;
-    color: ${colors.placeholder};
-    text-align: center;
-`;
-
 /** Stays put until the next attempt, unlike the toast, which times out. */
 const UploadError = styled.p`
-    margin: 12px 0 0;
+    margin: 10px 0 0;
     padding: 8px 12px;
     font-size: 12px;
     line-height: 1.45;
@@ -240,7 +299,7 @@ const UploadError = styled.p`
 `;
 
 const UploadingHint = styled.p`
-    margin: 12px 0 0;
+    margin: 10px 4px 0;
     font-size: 12px;
     color: ${colors.label};
     overflow-wrap: anywhere;
@@ -250,7 +309,7 @@ const ProgressRow = styled.div`
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-top: 8px;
+    margin: 6px 4px 0;
 `;
 
 const ProgressTrack = styled.div`
@@ -282,114 +341,57 @@ const ProgressValue = styled.span`
     color: ${colors.label};
 `;
 
-const ResumeList = styled.ul`
-    margin: 18px 0 0;
-    padding: 0;
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-`;
-
-/** The delete control only appears on hover, as annotated in the design. */
-const ResumeRow = styled.li`
+const UserRow = styled.div`
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 6px;
-    border-radius: 8px;
-
-    &:hover {
-        background-color: #f6f7f9;
-    }
-
-    &:hover button,
-    & button:focus-visible {
-        opacity: 1;
-    }
+    padding: 14px 16px 14px 20px;
+    border-top: 1px solid #eef0f3;
 `;
 
-/** Marks a row as a document at a glance. */
-const FileBadge = styled.span`
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    width: 28px;
-    height: 28px;
-    color: #2f6bff;
-    background-color: #e8effe;
-    border-radius: 7px;
-`;
-
-const FileName = styled.span`
+const UserText = styled.div`
     flex: 1;
     min-width: 0;
+`;
+
+const UserName = styled.p`
+    margin: 0;
     font-size: 13px;
+    font-weight: 500;
     color: ${colors.text};
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 `;
 
-const DeleteButton = styled.button`
+const UserField = styled.p`
+    margin: 1px 0 0;
+    font-size: 11px;
+    color: ${colors.textMuted};
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+`;
+
+const SettingsLink = styled(Link)`
     display: flex;
-    padding: 4px;
-    color: ${colors.placeholder};
-    background: none;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.15s ease;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    color: ${colors.label};
+    border-radius: 8px;
 
     &:hover {
-        color: ${colors.danger};
+        color: ${colors.text};
+        background-color: #f1f1f7;
     }
-`;
 
-const Spacer = styled.div`
-    flex: 1;
-`;
-
-const UserBlock = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 12px;
-`;
-
-const UserName = styled.span`
-    font-size: 14px;
-    color: ${colors.text};
-`;
-
-const ProfileCard = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 14px 16px;
-    background-color: #f6f7f9;
-    border-radius: 12px;
-`;
-
-const ProfileRow = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-`;
-
-const ProfileLabel = styled.span`
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: ${colors.placeholder};
-`;
-
-const ProfileValue = styled.span`
-    font-size: 13px;
-    color: ${colors.text};
+    &:focus-visible {
+        outline: 2px solid ${colors.borderFocus};
+        outline-offset: 1px;
+    }
 `;
 
 export interface ResumeSidebarProps {
@@ -397,6 +399,7 @@ export interface ResumeSidebarProps {
     resumes: Resume[];
     uploading: boolean;
     onUpload: (file: File) => void;
+    /** Called only after the user has confirmed the deletion. */
     onDelete: (resume: Resume) => void;
     /** Name of the file currently uploading, if any. */
     uploadingName: string | null;
@@ -432,12 +435,15 @@ const ResumeSidebar = ({
     uploadError,
 }: ResumeSidebarProps) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [pendingDelete, setPendingDelete] = useState<Resume | null>(null);
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         e.target.value = "";
         if (file) onUpload(file);
     };
+
+    const chooseFile = () => fileInputRef.current?.click();
 
     const fieldLabel =
         FIELD_OPTIONS.find((option) => option.value === user.field)?.label ?? "";
@@ -446,161 +452,161 @@ const ResumeSidebar = ({
         <>
             {open && <Backdrop onClick={onClose} />}
             <Aside $open={open}>
-                <CloseButton
-                    type="button"
-                    onClick={onClose}
-                    aria-label="Close resume panel"
-                >
-                    <Icon icon={X} size="lg" />
-                </CloseButton>
-                <Logo to="/" aria-label="CareerMate AI home">
-                <LogoIcon src={logoIcon} alt="" />
-                <LogoText src={logoText} alt="CareerMate AI" />
-            </Logo>
+                <Header>
+                    <Logo to="/" aria-label="CareerMate AI home">
+                        <LogoIcon src={logoIcon} alt="" />
+                        <LogoText src={logoText} alt="CareerMate AI" />
+                    </Logo>
+                    <CloseButton
+                        type="button"
+                        onClick={onClose}
+                        aria-label="Close sidebar"
+                    >
+                        <Icon icon={X} size="lg" />
+                    </CloseButton>
+                </Header>
 
-            <NewChatButton type="button" onClick={onNewConversation}>
-                + New conversation
-            </NewChatButton>
-
-            <SectionTitle>Conversations</SectionTitle>
-            {conversations.length === 0 ? (
-                <NoConversationsHint>
-                    Your conversations will appear here.
-                </NoConversationsHint>
-            ) : (
-                <ConversationList>
-                    {conversations.map((conversation) => (
-                        <ConversationItem key={conversation.id}>
-                            <ConversationButton
-                                type="button"
-                                $active={conversation.id === activeConversationId}
-                                aria-current={
-                                    conversation.id === activeConversationId
-                                        ? "true"
-                                        : undefined
-                                }
-                                onClick={() => onOpenConversation(conversation.id)}
-                                title={conversation.title}
-                            >
-                                {conversation.title}
-                            </ConversationButton>
-                        </ConversationItem>
-                    ))}
-                </ConversationList>
-            )}
-
-            <SectionTitle>My Resume</SectionTitle>
-            <UploadButton
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-            >
-                <Icon icon={Upload} size="lg" />
-                {uploading
-                    ? "Uploading..."
-                    : resumes.length
-                      ? "Upload other resume"
-                      : "Upload resume"}
-            </UploadButton>
-            <input
-                ref={fileInputRef}
-                type="file"
-                accept={RESUME_ACCEPT}
-                hidden
-                onChange={handleChange}
-            />
-
-            {uploading && uploadingName && (
-                <>
-                    <UploadingHint>
-                        {uploadProgress >= 1
-                            ? `Processing ${uploadingName}…`
-                            : `Uploading ${uploadingName}…`}
-                    </UploadingHint>
-                    <ProgressRow>
-                        <ProgressTrack
-                            role="progressbar"
-                            aria-label={`Uploading ${uploadingName}`}
-                            aria-valuenow={Math.round(uploadProgress * 100)}
-                            aria-valuemin={0}
-                            aria-valuemax={100}
+                <ChatsSection aria-labelledby="sidebar-chats">
+                    <SectionHeader>
+                        <SectionTitle id="sidebar-chats">Chats</SectionTitle>
+                        <IconButton
+                            type="button"
+                            onClick={onNewConversation}
+                            aria-label="New chat"
+                            title="New chat"
                         >
-                            <ProgressFill
-                                style={{ width: `${uploadProgress * 100}%` }}
-                            />
-                        </ProgressTrack>
-                        <ProgressValue>
-                            {Math.round(uploadProgress * 100)}%
-                        </ProgressValue>
-                    </ProgressRow>
-                </>
-            )}
-
-            {uploadError && <UploadError role="alert">{uploadError}</UploadError>}
-
-            {resumes.length === 0 && !uploading ? (
-                <EmptyHint>You haven&apos;t uploaded a resume</EmptyHint>
-            ) : (
-                <ResumeList>
-                    {resumes.map((resume) => (
-                        <ResumeRow key={resume.id}>
-                            <FileBadge>
-                                <Icon icon={FileText} size="md" />
-                            </FileBadge>
-                            <FileName title={resume.fileName}>
-                                {resume.fileName}
-                            </FileName>
-                            <DownloadButton
-                                as="button"
-                                type="button"
-                                onClick={() => onDownloadResume(resume)}
-                                aria-label={`Download ${resume.fileName}`}
-                                title="Download"
-                            >
-                                <Icon icon={Download} size="md" />
-                            </DownloadButton>
-                            <DeleteButton
-                                type="button"
-                                onClick={() => onDelete(resume)}
-                                aria-label={`Delete ${resume.fileName}`}
-                            >
-                                <Icon icon={Trash2} size="md" />
-                            </DeleteButton>
-                        </ResumeRow>
-                    ))}
-                </ResumeList>
-            )}
-
-            <Spacer />
-
-            <UserBlock>
-                <Avatar name={user.fullName} src={user.avatarUrl} size={30} />
-                <UserName>{user.displayName || user.fullName}</UserName>
-            </UserBlock>
-
-            {(fieldLabel || user.goal) && (
-                <ProfileCard>
-                    {fieldLabel && (
-                        <ProfileRow>
-                            <ProfileLabel>
-                                <Icon icon={Briefcase} size="sm" />
-                                Your field:
-                            </ProfileLabel>
-                            <ProfileValue>{fieldLabel}</ProfileValue>
-                        </ProfileRow>
+                            <Icon icon={SquarePen} size="md" />
+                        </IconButton>
+                    </SectionHeader>
+                    {conversations.length === 0 ? (
+                        <Hint>Your conversations will appear here.</Hint>
+                    ) : (
+                        <ConversationList>
+                            {conversations.map((conversation) => {
+                                const active =
+                                    conversation.id === activeConversationId;
+                                return (
+                                    <li key={conversation.id}>
+                                        <ConversationButton
+                                            type="button"
+                                            $active={active}
+                                            aria-current={active ? "true" : undefined}
+                                            onClick={() =>
+                                                onOpenConversation(conversation.id)
+                                            }
+                                            title={conversation.title}
+                                        >
+                                            {conversation.title}
+                                        </ConversationButton>
+                                    </li>
+                                );
+                            })}
+                        </ConversationList>
                     )}
-                    {user.goal && (
-                        <ProfileRow>
-                            <ProfileLabel>
-                                <Icon icon={Target} size="sm" />
-                                Goal:
-                            </ProfileLabel>
-                            <ProfileValue>{user.goal}</ProfileValue>
-                        </ProfileRow>
+                </ChatsSection>
+
+                <ResumeSection aria-labelledby="sidebar-resume">
+                    <SectionHeader>
+                        <SectionTitle id="sidebar-resume">Resume</SectionTitle>
+                    </SectionHeader>
+
+                    {resumes.length > 0 && (
+                        <ResumeList>
+                            {resumes.map((resume) => (
+                                <ResumeCard
+                                    key={resume.id}
+                                    resume={resume}
+                                    onDownload={onDownloadResume}
+                                    onRequestDelete={setPendingDelete}
+                                />
+                            ))}
+                        </ResumeList>
                     )}
-                </ProfileCard>
-            )}
+
+                    {resumes.length === 0 && !uploading ? (
+                        <UploadPrompt type="button" onClick={chooseFile}>
+                            <Icon icon={Upload} size="lg" />
+                            Upload your resume
+                            <span>PDF, up to 10 MB</span>
+                        </UploadPrompt>
+                    ) : (
+                        <UploadAnother
+                            type="button"
+                            onClick={chooseFile}
+                            disabled={uploading}
+                        >
+                            <Icon icon={Plus} size="sm" />
+                            {uploading ? "Uploading…" : "Upload another"}
+                        </UploadAnother>
+                    )}
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept={RESUME_ACCEPT}
+                        hidden
+                        onChange={handleChange}
+                    />
+
+                    {uploading && uploadingName && (
+                        <>
+                            <UploadingHint>
+                                {uploadProgress >= 1
+                                    ? `Processing ${uploadingName}…`
+                                    : `Uploading ${uploadingName}…`}
+                            </UploadingHint>
+                            <ProgressRow>
+                                <ProgressTrack
+                                    role="progressbar"
+                                    aria-label={`Uploading ${uploadingName}`}
+                                    aria-valuenow={Math.round(uploadProgress * 100)}
+                                    aria-valuemin={0}
+                                    aria-valuemax={100}
+                                >
+                                    <ProgressFill
+                                        style={{ width: `${uploadProgress * 100}%` }}
+                                    />
+                                </ProgressTrack>
+                                <ProgressValue>
+                                    {Math.round(uploadProgress * 100)}%
+                                </ProgressValue>
+                            </ProgressRow>
+                        </>
+                    )}
+
+                    {uploadError && <UploadError role="alert">{uploadError}</UploadError>}
+                </ResumeSection>
+
+                <UserRow>
+                    <Avatar name={user.fullName} src={user.avatarUrl} size={32} />
+                    <UserText>
+                        <UserName>{user.displayName || user.fullName}</UserName>
+                        {fieldLabel && <UserField>{fieldLabel}</UserField>}
+                    </UserText>
+                    <SettingsLink to="/settings" aria-label="Settings" title="Settings">
+                        <Icon icon={Settings} size="lg" />
+                    </SettingsLink>
+                </UserRow>
             </Aside>
+
+            {pendingDelete && (
+                <ConfirmDialog
+                    title="Delete this resume?"
+                    message={
+                        <>
+                            <strong>{pendingDelete.fileName}</strong> will be
+                            deleted, and the assistant will no longer be able to
+                            read it. This cannot be undone.
+                        </>
+                    }
+                    confirmLabel="Delete"
+                    danger
+                    onCancel={() => setPendingDelete(null)}
+                    onConfirm={() => {
+                        onDelete(pendingDelete);
+                        setPendingDelete(null);
+                    }}
+                />
+            )}
         </>
     );
 };
