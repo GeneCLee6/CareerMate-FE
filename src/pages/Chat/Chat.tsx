@@ -24,6 +24,7 @@ import {
     sendMessage as sendChatMessage,
 } from "../../api/chat";
 import ResumeSidebar from "./ResumeSidebar";
+import WaitingIndicator from "./WaitingIndicator";
 import { colors, fontFamily, gradient } from "../../styles/tokens";
 import { validateResumeFile } from "../../utils/fileValidation";
 import {
@@ -857,7 +858,9 @@ const Chat = () => {
                                     </AiAvatar>
                                     <MessageBody>
                                         <Author>CareerMate AI</Author>
-                                        <Bubble>AI is thinking...</Bubble>
+                                        <Bubble>
+                                            <WaitingIndicator />
+                                        </Bubble>
                                     </MessageBody>
                                 </Message>
                             )}
