@@ -1,7 +1,9 @@
 import { ChangeEvent, FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
+import { ArrowUp, Menu, Mic, Plus } from "lucide-react";
 import UserMenu from "../../components/UserMenu";
 import Avatar from "../../components/Avatar";
+import Icon from "../../components/Icon";
 import { useToast } from "../../components/Toast";
 import { useAuth } from "../../context/AuthContext";
 import { ApiError } from "../../api/client";
@@ -411,59 +413,6 @@ const SendButton = styled.button`
     }
 `;
 
-const MenuIcon = () => (
-    <svg
-        width="18"
-        height="18"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        aria-hidden="true"
-    >
-        <path d="M4 7h16M4 12h16M4 17h16" />
-    </svg>
-);
-
-const PlusIcon = () => (
-    <svg
-        width="18"
-        height="18"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        aria-hidden="true"
-    >
-        <path d="M12 5v14M5 12h14" />
-    </svg>
-);
-
-const MicIcon = () => (
-    <svg
-        width="17"
-        height="17"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <rect x="9" y="3" width="6" height="11" rx="3" />
-        <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
-    </svg>
-);
-
-const SparkIcon = () => (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-        <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Z" />
-    </svg>
-);
-
 const Chat = () => {
     const { user } = useAuth();
     const showToast = useToast();
@@ -836,7 +785,7 @@ const Chat = () => {
                         onClick={() => setDrawerOpen(true)}
                         aria-label="Open resume panel"
                     >
-                        <MenuIcon />
+                        <Icon icon={Menu} size="lg" />
                     </MenuButton>
                     <TopBarSpacer />
                     <UserMenu />
@@ -992,7 +941,7 @@ const Chat = () => {
                                 disabled={attachments.length >= MAX_ATTACHMENTS}
                                 aria-label="Add attachment"
                             >
-                                <PlusIcon />
+                                <Icon icon={Plus} size="lg" />
                             </RoundButton>
                             <RightActions>
                                 {speech.supported && (
@@ -1030,7 +979,7 @@ const Chat = () => {
                                         }
                                         aria-pressed={speech.listening}
                                     >
-                                        <MicIcon />
+                                        <Icon icon={Mic} size="lg" />
                                         {speech.listening && (
                                             <ListeningDot aria-hidden="true" />
                                         )}
@@ -1045,7 +994,7 @@ const Chat = () => {
                                     }
                                     aria-label="Send message"
                                 >
-                                    <SparkIcon />
+                                    <Icon icon={ArrowUp} size="lg" />
                                 </SendButton>
                             </RightActions>
                         </ComposerActions>

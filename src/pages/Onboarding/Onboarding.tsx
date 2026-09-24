@@ -18,6 +18,8 @@ import {
     ONBOARDING_STEPS,
 } from "./options";
 import { toUserField, toUserRole } from "../../utils/profileOptions";
+import { ArrowLeft } from "lucide-react";
+import Icon from "../../components/Icon";
 
 const Page = styled.div`
     display: grid;
@@ -294,7 +296,7 @@ const Onboarding = () => {
                             onClick={() => setStepIndex(1)}
                         >
                             Start Setup
-                            <ArrowIcon size={18} />
+                            <ArrowIcon size="lg" />
                         </InlineButton>
                     </Centered>
                 )}
@@ -334,26 +336,12 @@ const Onboarding = () => {
                                     type="button"
                                     onClick={() => setStepIndex(0)}
                                 >
-                                    <svg
-                                        width="16"
-                                        height="16"
-                                        viewBox="0 0 20 20"
-                                        fill="none"
-                                        aria-hidden="true"
-                                    >
-                                        <path
-                                            d="M16 10H4M4 10l6-6M4 10l6 6"
-                                            stroke="currentColor"
-                                            strokeWidth="2"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                        />
-                                    </svg>
+                                    <Icon icon={ArrowLeft} size="md" />
                                     Back
                                 </BackButton>
                                 <NextButton type="submit" disabled={saving}>
                                     {saving ? "Saving..." : "Next"}
-                                    <ArrowIcon size={16} />
+                                    <ArrowIcon size="md" />
                                 </NextButton>
                             </Actions>
                         </Form>
@@ -371,7 +359,7 @@ const Onboarding = () => {
                             onClick={() => navigate("/app", { replace: true })}
                         >
                             Go to Dashboard
-                            <ArrowIcon size={18} />
+                            <ArrowIcon size="lg" />
                         </InlineButton>
                     </Centered>
                 )}

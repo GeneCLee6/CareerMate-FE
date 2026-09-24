@@ -2,6 +2,8 @@ import { FormEvent, ReactNode, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import AuthLayout from "../../components/AuthLayout";
+import { ArrowLeft, ArrowRight, KeyRound, Lock, Mail } from "lucide-react";
+import Icon from "../../components/Icon";
 import TextField from "../../components/TextField";
 import PasswordField from "../../components/PasswordField";
 import GradientButton from "../../components/GradientButton";
@@ -126,75 +128,6 @@ const GoToLogin = styled(Link)`
     border-radius: 22px;
     text-decoration: none;
 `;
-
-const KeyIcon = () => (
-    <svg
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <circle cx="8" cy="15" r="4" />
-        <path d="m10.8 12.2 7.2-7.2M16 5l2.5 2.5M14 7l2.5 2.5" />
-    </svg>
-);
-
-const MailIcon = () => (
-    <svg
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <rect x="3" y="5" width="18" height="14" rx="2" />
-        <path d="m3 7 9 6 9-6" />
-    </svg>
-);
-
-const LockIcon = () => (
-    <svg
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <rect x="4" y="10" width="16" height="11" rx="2" />
-        <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-    </svg>
-);
-
-const ArrowRight = () => (
-    <svg
-        width="18"
-        height="18"
-        viewBox="0 0 20 20"
-        fill="none"
-        aria-hidden="true"
-    >
-        <path
-            d="M4 10H16M16 10L10 4M16 10L10 16"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
-    </svg>
-);
 
 type Step = "email" | "code" | "password" | "done";
 
@@ -338,21 +271,7 @@ const ForgotPassword = () => {
             headerAction={
                 step === "done" ? undefined : (
                     <BackButton type="button" onClick={back}>
-                        <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 20 20"
-                            fill="none"
-                            aria-hidden="true"
-                        >
-                            <path
-                                d="M16 10H4M4 10l6-6M4 10l6 6"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                        </svg>
+                        <Icon icon={ArrowLeft} size="md" />
                         Back
                     </BackButton>
                 )
@@ -367,7 +286,7 @@ const ForgotPassword = () => {
             <SuccessMessage message="🎉 Reset password successful!">
                 <GoToLogin to="/login">
                     Go to login
-                    <ArrowRight />
+                    <Icon icon={ArrowRight} size="lg" />
                 </GoToLogin>
             </SuccessMessage>
         );
@@ -377,7 +296,7 @@ const ForgotPassword = () => {
         return shell(
             <>
                 <IconBadge>
-                    <MailIcon />
+                    <Icon icon={Mail} size="xl" />
                 </IconBadge>
                 <Title>Check your email</Title>
                 <Subtitle>
@@ -414,7 +333,7 @@ const ForgotPassword = () => {
         return shell(
             <>
                 <IconBadge>
-                    <LockIcon />
+                    <Icon icon={Lock} size="xl" />
                 </IconBadge>
                 <Title>Set a new password</Title>
                 <Subtitle>
@@ -456,7 +375,7 @@ const ForgotPassword = () => {
     return shell(
         <>
             <IconBadge>
-                <KeyIcon />
+                <Icon icon={KeyRound} size="xl" />
             </IconBadge>
             <Title>Forgot your password?</Title>
             <Subtitle>
