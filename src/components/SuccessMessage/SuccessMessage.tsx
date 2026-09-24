@@ -1,6 +1,8 @@
 import { ReactNode } from "react";
 import styled from "styled-components";
 import { colors } from "../../styles/tokens";
+import { Check } from "lucide-react";
+import Icon from "../Icon";
 
 const Wrapper = styled.div`
     display: flex;
@@ -49,19 +51,7 @@ const SuccessMessage = ({ message, children }: SuccessMessageProps) => (
     <Wrapper>
         <CheckCircle>
             <CheckInner>
-                <svg
-                    width="26"
-                    height="26"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                >
-                    <path d="M20 6 9 17l-5-5" />
-                </svg>
+                <Icon icon={Check} size="xxl" />
             </CheckInner>
         </CheckCircle>
         <Message>{message}</Message>

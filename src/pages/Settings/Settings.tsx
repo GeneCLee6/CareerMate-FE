@@ -1,7 +1,10 @@
-import { ChangeEvent, ComponentType, useRef, useState } from "react";
+import { ChangeEvent, useRef, useState } from "react";
 import styled from "styled-components";
 import AppHeader from "../../components/AppHeader";
 import Avatar from "../../components/Avatar";
+import { Briefcase, Camera, Lock, User } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import Icon from "../../components/Icon";
 import { useToast } from "../../components/Toast";
 import { useAuth } from "../../context/AuthContext";
 import { ApiError } from "../../api/client";
@@ -178,79 +181,11 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
-const PersonIcon = () => (
-    <svg
-        width="17"
-        height="17"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <circle cx="12" cy="8" r="4" />
-        <path d="M4 21a8 8 0 0 1 16 0" />
-    </svg>
-);
-
-const BriefcaseIcon = () => (
-    <svg
-        width="17"
-        height="17"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <rect x="3" y="7" width="18" height="13" rx="2" />
-        <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
-    </svg>
-);
-
-const LockIcon = () => (
-    <svg
-        width="17"
-        height="17"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <rect x="4" y="10" width="16" height="11" rx="2" />
-        <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-    </svg>
-);
-
-const TAB_ICONS: Record<TabId, ComponentType> = {
-    basic: PersonIcon,
-    career: BriefcaseIcon,
-    security: LockIcon,
+const TAB_ICONS: Record<TabId, LucideIcon> = {
+    basic: User,
+    career: Briefcase,
+    security: Lock,
 };
-
-const CameraIcon = () => (
-    <svg
-        width="12"
-        height="12"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <path d="M3 8h3l2-2h8l2 2h3v12H3z" />
-        <circle cx="12" cy="13" r="3.5" />
-    </svg>
-);
 
 const Settings = () => {
     const [tab, setTab] = useState<TabId>("basic");
@@ -326,7 +261,7 @@ const Settings = () => {
                             size={62}
                         />
                         <CameraChip aria-hidden="true">
-                            <CameraIcon />
+                            <Icon icon={Camera} size="xs" />
                         </CameraChip>
                     </AvatarButton>
 
@@ -358,7 +293,6 @@ const Settings = () => {
                 <Body>
                     <Tabs aria-label="Settings sections">
                         {TABS.map(({ id, label }) => {
-                            const Icon = TAB_ICONS[id];
                             return (
                                 <Tab
                                     key={id}
@@ -367,7 +301,7 @@ const Settings = () => {
                                     aria-current={tab === id ? "true" : undefined}
                                     onClick={() => setTab(id)}
                                 >
-                                    <Icon />
+                                    <Icon icon={TAB_ICONS[id]} size="lg" />
                                     {label}
                                 </Tab>
                             );

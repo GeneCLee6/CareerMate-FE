@@ -2,6 +2,8 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import AuthLayout from "../../components/AuthLayout";
+import { ArrowLeft, Mail } from "lucide-react";
+import Icon from "../../components/Icon";
 import GradientButton from "../../components/GradientButton";
 import AlertBanner from "../../components/AlertBanner";
 import OtpInput from "../../components/OtpInput";
@@ -109,35 +111,6 @@ const BackButton = styled.button`
         background-color: #fafafa;
     }
 `;
-
-const MailIcon = () => (
-    <svg
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <rect x="3" y="5" width="18" height="14" rx="2" />
-        <path d="m3 7 9 6 9-6" />
-    </svg>
-);
-
-const BackArrow = () => (
-    <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-        <path
-            d="M16 10H4M4 10l6-6M4 10l6 6"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
-    </svg>
-);
 
 /** Set by Register and by Login when it meets an unverified account. */
 export interface VerifyEmailState {
@@ -259,14 +232,14 @@ const VerifyEmail = () => {
             showPanel={false}
             headerAction={
                 <BackButton type="button" onClick={() => navigate("/register")}>
-                    <BackArrow />
+                    <Icon icon={ArrowLeft} size="md" />
                     Back
                 </BackButton>
             }
         >
             <Centered>
                 <IconBadge>
-                    <MailIcon />
+                    <Icon icon={Mail} size="xl" />
                 </IconBadge>
                 <Title>Verify your email</Title>
                 <Subtitle>

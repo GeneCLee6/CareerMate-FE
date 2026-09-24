@@ -1,24 +1,13 @@
+import { ArrowRight } from "lucide-react";
+import Icon, { IconSize } from "../Icon";
+
 export interface ArrowIconProps {
-    size?: number;
+    size?: IconSize;
 }
 
-const ArrowIcon = ({ size = 20 }: ArrowIconProps) => (
-    <svg
-        width={size}
-        height={size}
-        viewBox="0 0 20 20"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        aria-hidden="true"
-    >
-        <path
-            d="M4 10H16M16 10L10 4M16 10L10 16"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
-    </svg>
+/** The forward arrow used on call-to-action buttons. */
+const ArrowIcon = ({ size = "xl" }: ArrowIconProps) => (
+    <Icon icon={ArrowRight} size={size} />
 );
 
 export default ArrowIcon;

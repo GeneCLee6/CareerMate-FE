@@ -1,7 +1,17 @@
 import { ChangeEvent, useRef } from "react";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
+import {
+    Briefcase,
+    Download,
+    FileText,
+    Target,
+    Trash2,
+    Upload,
+    X,
+} from "lucide-react";
 import Avatar from "../../components/Avatar";
+import Icon from "../../components/Icon";
 import { Resume } from "../../api/resumes";
 import { Conversation } from "../../api/chat";
 import { User } from "../../api/auth";
@@ -299,6 +309,19 @@ const ResumeRow = styled.li`
     }
 `;
 
+/** Marks a row as a document at a glance. */
+const FileBadge = styled.span`
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    color: #2f6bff;
+    background-color: #e8effe;
+    border-radius: 7px;
+`;
+
 const FileName = styled.span`
     flex: 1;
     min-width: 0;
@@ -369,118 +392,6 @@ const ProfileValue = styled.span`
     color: ${colors.text};
 `;
 
-const CloseIcon = () => (
-    <svg
-        width="18"
-        height="18"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        aria-hidden="true"
-    >
-        <path d="M6 6l12 12M18 6 6 18" />
-    </svg>
-);
-
-const UploadIcon = () => (
-    <svg
-        width="17"
-        height="17"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <rect x="3" y="3" width="18" height="18" rx="3" />
-        <path d="M12 16V8m0 0-3 3m3-3 3 3" />
-    </svg>
-);
-
-const DownloadIcon = () => (
-    <svg
-        width="15"
-        height="15"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <path d="M12 3v12M12 15l-4-4M12 15l4-4" />
-        <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
-    </svg>
-);
-
-const PdfIcon = () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <rect x="3" y="2" width="18" height="20" rx="3" fill="#e8effe" />
-        <path
-            d="M8 8h4a2 2 0 1 1 0 4H8V8Zm0 0v8"
-            stroke="#2f6bff"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
-    </svg>
-);
-
-const TrashIcon = () => (
-    <svg
-        width="15"
-        height="15"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0 1 13h8l1-13" />
-    </svg>
-);
-
-const BriefcaseIcon = () => (
-    <svg
-        width="13"
-        height="13"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <rect x="3" y="7" width="18" height="13" rx="2" />
-        <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
-    </svg>
-);
-
-const TargetIcon = () => (
-    <svg
-        width="13"
-        height="13"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <circle cx="12" cy="12" r="9" />
-        <circle cx="12" cy="12" r="4" />
-    </svg>
-);
-
 export interface ResumeSidebarProps {
     user: User;
     resumes: Resume[];
@@ -540,7 +451,7 @@ const ResumeSidebar = ({
                     onClick={onClose}
                     aria-label="Close resume panel"
                 >
-                    <CloseIcon />
+                    <Icon icon={X} size="lg" />
                 </CloseButton>
                 <Logo to="/" aria-label="CareerMate AI home">
                 <LogoIcon src={logoIcon} alt="" />
@@ -584,7 +495,7 @@ const ResumeSidebar = ({
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
             >
-                <UploadIcon />
+                <Icon icon={Upload} size="lg" />
                 {uploading
                     ? "Uploading..."
                     : resumes.length
@@ -633,7 +544,9 @@ const ResumeSidebar = ({
                 <ResumeList>
                     {resumes.map((resume) => (
                         <ResumeRow key={resume.id}>
-                            <PdfIcon />
+                            <FileBadge>
+                                <Icon icon={FileText} size="md" />
+                            </FileBadge>
                             <FileName title={resume.fileName}>
                                 {resume.fileName}
                             </FileName>
@@ -644,14 +557,14 @@ const ResumeSidebar = ({
                                 aria-label={`Download ${resume.fileName}`}
                                 title="Download"
                             >
-                                <DownloadIcon />
+                                <Icon icon={Download} size="md" />
                             </DownloadButton>
                             <DeleteButton
                                 type="button"
                                 onClick={() => onDelete(resume)}
                                 aria-label={`Delete ${resume.fileName}`}
                             >
-                                <TrashIcon />
+                                <Icon icon={Trash2} size="md" />
                             </DeleteButton>
                         </ResumeRow>
                     ))}
@@ -670,7 +583,7 @@ const ResumeSidebar = ({
                     {fieldLabel && (
                         <ProfileRow>
                             <ProfileLabel>
-                                <BriefcaseIcon />
+                                <Icon icon={Briefcase} size="sm" />
                                 Your field:
                             </ProfileLabel>
                             <ProfileValue>{fieldLabel}</ProfileValue>
@@ -679,7 +592,7 @@ const ResumeSidebar = ({
                     {user.goal && (
                         <ProfileRow>
                             <ProfileLabel>
-                                <TargetIcon />
+                                <Icon icon={Target} size="sm" />
                                 Goal:
                             </ProfileLabel>
                             <ProfileValue>{user.goal}</ProfileValue>

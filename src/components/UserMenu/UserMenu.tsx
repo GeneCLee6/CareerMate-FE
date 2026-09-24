@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Avatar from "../Avatar";
+import { ChevronDown, LogOut, Settings } from "lucide-react";
+import Icon from "../Icon";
 import Modal from "../Modal";
 import { useToast } from "../Toast";
 import { useAuth } from "../../context/AuthContext";
@@ -135,56 +137,6 @@ const ConfirmButton = styled.button`
     }
 `;
 
-const CaretIcon = () => (
-    <svg
-        width="12"
-        height="12"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <path d="m6 9 6 6 6-6" />
-    </svg>
-);
-
-const GearIcon = () => (
-    <svg
-        width="18"
-        height="18"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <circle cx="12" cy="12" r="3" />
-        <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
-    </svg>
-);
-
-const LogoutIcon = () => (
-    <svg
-        width="18"
-        height="18"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <path d="M15 12H3m12 0-4-4m4 4-4 4" />
-        <path d="M10 4h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-8" />
-    </svg>
-);
-
 export interface UserMenuProps {
     /**
      * "app" is the signed-in shell: avatar only, with the email and a link to
@@ -253,7 +205,7 @@ const UserMenu = ({ variant = "app" }: UserMenuProps) => {
                             {user.displayName || user.fullName}
                         </TriggerName>
                         <Caret $open={open}>
-                            <CaretIcon />
+                            <Icon icon={ChevronDown} size="xs" />
                         </Caret>
                     </>
                 )}
@@ -272,7 +224,7 @@ const UserMenu = ({ variant = "app" }: UserMenuProps) => {
                                     navigate("/settings");
                                 }}
                             >
-                                <GearIcon />
+                                <Icon icon={Settings} size="lg" />
                                 Personal Settings
                             </Item>
                         </>
@@ -285,7 +237,7 @@ const UserMenu = ({ variant = "app" }: UserMenuProps) => {
                             setConfirmingLogout(true);
                         }}
                     >
-                        <LogoutIcon />
+                        <Icon icon={LogOut} size="lg" />
                         Logout
                     </Item>
                 </Menu>

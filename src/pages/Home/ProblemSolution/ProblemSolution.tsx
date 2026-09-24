@@ -6,6 +6,8 @@ import {
     landingLayout,
 } from "../../../styles/tokens";
 import rocketIconImg from "../../../assets/rocket-icon.png";
+import { ArrowUpRight } from "lucide-react";
+import Icon from "../../../components/Icon";
 
 const PROBLEMS: string[] = [
     "Your resume keeps getting ignored.",
@@ -129,22 +131,7 @@ const ProblemSolution = () => {
                             <ProblemItem key={problem}>
                                 <ProblemText>{problem}</ProblemText>
                                 <ProblemIcon>
-                                    <svg
-                                        width="24"
-                                        height="24"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        aria-hidden="true"
-                                    >
-                                        <path
-                                            d="M7 17L17 7M17 7H7M17 7V17"
-                                            stroke="white"
-                                            strokeWidth="2"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                        />
-                                    </svg>
+                                    <Icon icon={ArrowUpRight} size="xxl" color="white" />
                                 </ProblemIcon>
                             </ProblemItem>
                         ))}
