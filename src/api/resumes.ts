@@ -1,11 +1,20 @@
 import { putWithProgress } from "./upload";
 import { apiClient, SuccessData } from "./client";
 
+/**
+ * Whether the assistant can read a resume's text. `pending` is a resume
+ * uploaded before extraction existed; it is read the next time the assistant
+ * needs it. `empty` is a PDF with no text layer, such as a scan.
+ */
+export type ResumeTextStatus = "pending" | "ok" | "empty" | "failed";
+
 export interface Resume {
     id: string;
     fileKey: string;
     fileName: string;
     fileSize: number;
+    /** Absent only from responses older than text extraction. */
+    textStatus?: ResumeTextStatus;
     createdAt: string;
     updatedAt: string;
 }
