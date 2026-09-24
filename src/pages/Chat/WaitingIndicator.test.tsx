@@ -50,6 +50,13 @@ describe("WaitingIndicator", () => {
         expect(screen.getByText(/server wakes up/)).toBeInTheDocument();
     });
 
+    it("does not blame a waking server once the model is clearly working", () => {
+        render(<WaitingIndicator mayBeWaking={false} />);
+        advance(EXPLAIN_AFTER + 5);
+        expect(screen.queryByText(/server wakes up/)).not.toBeInTheDocument();
+        expect(screen.getByText(`${EXPLAIN_AFTER + 5}s`)).toBeInTheDocument();
+    });
+
     it("stops its timer when it goes away", () => {
         const { unmount } = render(<WaitingIndicator />);
         unmount();
