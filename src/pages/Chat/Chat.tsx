@@ -21,10 +21,10 @@ import {
     getChatStatus,
     getConversations,
     getMessages,
-    sendMessage as sendChatMessage,
+    streamMessage as streamChatMessage,
 } from "../../api/chat";
 import ResumeSidebar from "./ResumeSidebar";
-import WaitingIndicator from "./WaitingIndicator";
+import StreamingReply from "./StreamingReply";
 import { colors, fontFamily, gradient } from "../../styles/tokens";
 import { validateResumeFile } from "../../utils/fileValidation";
 import {
@@ -426,6 +426,10 @@ const Chat = () => {
     const [messages, setMessages] = useState<ApiChatMessage[]>([]);
     const [conversationId, setConversationId] = useState<string | null>(null);
     const [sending, setSending] = useState(false);
+    // The reply while it streams in; empty between replies.
+    const [streamed, setStreamed] = useState({ thinking: "", text: "" });
+    // Cancels the reply in flight, which also stops the model upstream.
+    const streamAbort = useRef<AbortController | null>(null);
     const [chatError, setChatError] = useState<string | null>(null);
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [draft, setDraft] = useState("");
@@ -590,8 +594,13 @@ const Chat = () => {
         }
     }
 
+    // Leaving the page mid-reply cancels it; the server rolls the turn back
+    // and stops the model, so nobody pays for an answer nobody will read.
+    useEffect(() => () => streamAbort.current?.abort(), []);
+
     /** Leaves the current conversation behind without deleting it. */
     function handleNewConversation() {
+        streamAbort.current?.abort();
         setConversationId(null);
         setMessages([]);
         setChatError(null);
@@ -717,10 +726,22 @@ const Chat = () => {
                 }))
             );
 
-            const result = await sendChatMessage(
+            const controller = new AbortController();
+            streamAbort.current = controller;
+            const result = await streamChatMessage(
                 text,
                 conversationId ?? undefined,
-                encoded
+                encoded,
+                {
+                    onThinking: (piece) =>
+                        setStreamed((prev) => ({
+                            ...prev,
+                            thinking: prev.thinking + piece,
+                        })),
+                    onText: (piece) =>
+                        setStreamed((prev) => ({ ...prev, text: prev.text + piece })),
+                },
+                controller.signal
             );
 
             // The bytes are on their way; the previews are no longer needed.
@@ -744,6 +765,10 @@ const Chat = () => {
             setMessages((prev) =>
                 prev.filter((message) => message.id !== pendingId)
             );
+            // Cancelled on purpose (a new chat, or leaving): not an error.
+            if (err instanceof DOMException && err.name === "AbortError") {
+                return;
+            }
             setDraft(text);
             // Give the files back too, so a retry is one click.
             setAttachments(sendingAttachments);
@@ -754,6 +779,8 @@ const Chat = () => {
             );
         } finally {
             setSending(false);
+            setStreamed({ thinking: "", text: "" });
+            streamAbort.current = null;
         }
     }
 
@@ -859,7 +886,10 @@ const Chat = () => {
                                     <MessageBody>
                                         <Author>CareerMate AI</Author>
                                         <Bubble>
-                                            <WaitingIndicator />
+                                            <StreamingReply
+                                                thinking={streamed.thinking}
+                                                text={streamed.text}
+                                            />
                                         </Bubble>
                                     </MessageBody>
                                 </Message>

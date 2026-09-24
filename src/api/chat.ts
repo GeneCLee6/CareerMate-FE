@@ -1,4 +1,5 @@
-import { apiClient, SuccessData } from "./client";
+import { ApiError, apiClient, openStream, SuccessData } from "./client";
+import { createSseParser } from "./sse";
 
 export type ChatRole = "user" | "assistant";
 
@@ -25,7 +26,7 @@ export interface Conversation {
     createdAt: string;
 }
 
-interface SendMessageResult {
+export interface SendMessageResult {
     conversation: Conversation;
     userMessage: ChatMessage;
     assistantMessage: ChatMessage;
@@ -80,6 +81,91 @@ export function sendMessage(
             ...(attachments?.length ? { attachments } : {}),
         })
         .then((res) => res.data);
+}
+
+export interface StreamHandlers {
+    /** The turn is stored; `conversation` is new if none was given. */
+    onStart?: (turn: { conversation: Conversation; userMessage: ChatMessage }) => void;
+    /** A piece of the model's reasoning summary, before the answer. */
+    onThinking?: (text: string) => void;
+    /** A piece of the answer. */
+    onText?: (text: string) => void;
+}
+
+/**
+ * Sends a message and streams the reply. Resolves with both turns as the
+ * server stored them — render that, not the pieces, so the screen matches a
+ * reload. Rejects with an ApiError if the server reports a failure or the
+ * connection ends early; in both cases the server has rolled the turn back.
+ * Aborting `signal` rejects with an AbortError and cancels the reply
+ * upstream.
+ */
+export async function streamMessage(
+    content: string,
+    conversationId: string | undefined,
+    attachments: OutgoingAttachment[] | undefined,
+    handlers: StreamHandlers = {},
+    signal?: AbortSignal
+): Promise<SendMessageResult> {
+    const path = conversationId
+        ? `/chat/conversations/${conversationId}/messages/stream`
+        : "/chat/messages/stream";
+
+    const response = await openStream(
+        path,
+        { content, ...(attachments?.length ? { attachments } : {}) },
+        signal
+    );
+    if (!response.body) {
+        throw new ApiError("Streaming is not supported by this browser.", 0);
+    }
+
+    let result: SendMessageResult | null = null;
+    let failure: ApiError | null = null;
+
+    const parser = createSseParser(({ event, data }) => {
+        const payload = JSON.parse(data);
+        switch (event) {
+            case "start":
+                handlers.onStart?.(payload);
+                break;
+            case "thinking":
+                handlers.onThinking?.(payload.text);
+                break;
+            case "text":
+                handlers.onText?.(payload.text);
+                break;
+            case "done":
+                result = payload;
+                break;
+            case "error":
+                failure = new ApiError(payload.message, payload.status);
+                break;
+            default:
+                // Unknown events are ignored, so the server can add some.
+                break;
+        }
+    });
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        // stream: true keeps a character split across two reads intact.
+        parser.push(decoder.decode(value, { stream: true }));
+    }
+    parser.push(decoder.decode());
+
+    if (failure) throw failure;
+    if (!result) {
+        throw new ApiError(
+            "The connection closed before the reply finished. Please try again.",
+            0,
+            true
+        );
+    }
+    return result;
 }
 
 /** How much was removed, so the confirmation can say what actually happened. */

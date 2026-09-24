@@ -116,6 +116,55 @@ async function request<TResponse>(
     return payload as TResponse;
 }
 
+/**
+ * Opens a streamed POST and returns the response with its body unread, for a
+ * caller that reads it as it arrives.
+ *
+ * Failures that happen before the stream opens are handled exactly as
+ * `request` handles them — a network error, a JSON error body, and a 401 that
+ * ends the session — because the server checks everything it can before it
+ * starts streaming, and answers those checks with ordinary HTTP errors.
+ */
+export async function openStream(
+    path: string,
+    body: unknown,
+    signal?: AbortSignal
+): Promise<Response> {
+    const bearer = authToken;
+    let response: Response;
+
+    try {
+        response = await fetch(`${BASE_URL}${path}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "text/event-stream",
+                ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+            },
+            body: JSON.stringify(body),
+            signal,
+        });
+    } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") {
+            throw err;
+        }
+        throw new ApiError("Network error, please try again later.", 0, true);
+    }
+
+    if (!response.ok) {
+        if (response.status === 401 && bearer) {
+            onSessionExpired?.();
+        }
+        const payload = (await response.json().catch(() => null)) as ErrorBody | null;
+        throw new ApiError(
+            payload?.error?.message ?? "Something went wrong. Please try again.",
+            response.status
+        );
+    }
+
+    return response;
+}
+
 export const apiClient = {
     get: <T>(path: string, options?: RequestOptions) =>
         request<T>("GET", path, options),

@@ -110,7 +110,16 @@ function useElapsedSeconds(): number {
  * has been (after a few seconds), and why a long wait is normal (after
  * longer).
  */
-const WaitingIndicator = () => {
+export interface WaitingIndicatorProps {
+    /**
+     * Whether a long wait may still be the server waking up. Once anything
+     * has arrived from the model, the server is clearly awake, and saying
+     * otherwise would mislead.
+     */
+    mayBeWaking?: boolean;
+}
+
+const WaitingIndicator = ({ mayBeWaking = true }: WaitingIndicatorProps) => {
     const elapsed = useElapsedSeconds();
 
     return (
@@ -126,7 +135,7 @@ const WaitingIndicator = () => {
                 </Dots>
                 {elapsed >= SHOW_ELAPSED_AFTER && <Elapsed>{elapsed}s</Elapsed>}
             </Row>
-            {elapsed >= EXPLAIN_AFTER && (
+            {mayBeWaking && elapsed >= EXPLAIN_AFTER && (
                 <Explanation>
                     Still working on it. The first reply after a quiet spell can
                     take up to a minute while the server wakes up.
